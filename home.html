@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>NexFounder</title>
+
+<style>
+    .feed-top{
+    display:flex;
+    justify-content:space-around;
+    padding-bottom:15px;
+    border-bottom:1px solid #2f3336;
+    margin-bottom:20px;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:black;
+    color:white;
+    font-family:Arial, sans-serif;
+}
+
+.container{
+    display:flex;
+    min-height:100vh;
+}
+
+/* LEFT SIDEBAR */
+
+.sidebar{
+    width:25%;
+    padding:20px;
+    border-right:1px solid #2f3336;
+}
+
+.sidebar h1{
+    color:#1d9bf0;
+    margin-bottom:30px;
+}
+
+.sidebar ul{
+    list-style:none;
+}
+
+.sidebar ul li{
+    margin:25px 0;
+}
+
+.sidebar ul li a{
+    text-decoration:none;
+    color:white;
+    font-size:18px;
+}
+
+.sidebar button{
+    margin-top:20px;
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:25px;
+    background:#1d9bf0;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+}
+
+/* CENTER FEED */
+
+.feed{
+    width:50%;
+    padding:30px;
+}
+
+.feed h2{
+    margin-bottom:15px;
+}
+
+.feed p{
+    color:#71767b;
+    margin-bottom:20px;
+}
+
+.feed button{
+    padding:12px 20px;
+    border:none;
+    border-radius:25px;
+    background:#1d9bf0;
+    color:white;
+    cursor:pointer;
+}
+
+/* RIGHT PANEL */
+
+.rightbar{
+    width:25%;
+    padding:20px;
+    border-left:1px solid #2f3336;
+}
+
+.rightbar input{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:25px;
+    background:#16181c;
+    color:white;
+    outline:none;
+}
+
+.trending{
+    margin-top:20px;
+    background:#16181c;
+    padding:15px;
+    border-radius:15px;
+}
+
+.trending h3{
+    margin-bottom:15px;
+}
+
+.trending p{
+    margin:15px 0;
+    padding:10px;
+    border-radius:10px;
+    cursor:pointer;
+}
+
+.trending p:hover{
+    background:#1d1f23;
+}
+.sidebar ul li{
+    padding:10px;
+    border-radius:10px;
+}
+
+.sidebar ul li:hover{
+    background:#16181c;
+}
+.sidebar{
+    position:sticky;
+    top:0;
+    height:100vh;
+}
+.post{
+    border-bottom:1px solid #2f3336;
+    padding:20px 0;
+}
+.create-post{
+    background:#16181c;
+    padding:20px;
+    border-radius:20px;
+    margin-top:20px;
+    border:1px solid #2f3336;
+}
+
+.post-top{
+    display:flex;
+    gap:15px;
+    align-items:center;
+}
+
+.profile-pic{
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    background:#2f3336;
+}
+
+.post-top input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    color:white;
+    font-size:18px;
+}
+
+.post-actions{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:20px;
+}
+
+.post-actions button{
+    background:#1d9bf0;
+    color:white;
+    border:none;
+    padding:10px 22px;
+    border-radius:25px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- LEFT SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <h1>NexFounder</h1> 
+
+        <ul>
+            <li><a href="">Home</a></li>
+            <li><a href="">Explore</a></li>
+            <li><a href="">Founders</a></li>
+            <li><a href="">Chats</a></li>
+            <li><a href="">Profile</a></li>
+        </ul>
+
+        <button>Post</button>
+
+    </aside>
+
+    <!-- CENTER FEED -->
+
+    <main class="feed">
+        <div class="feed-top">
+
+<h3>For You</h3>
+<h3>Following</h3>
+
+</div>
+
+        <h2>Welcome to NexFounder</h2>
+
+        <p>
+            Share startup ideas, find co-founders,
+            and build together.
+        </p>
+
+        <div class="create-post">
+
+    <div class="post-top">
+
+        <div class="profile-pic"></div>
+
+        <input type="text" placeholder="Share your startup idea...">
+
+    </div>
+
+    <div class="post-actions">
+
+        <button>Post</button>
+
+    </div>
+
+</div>
+
+    </main>
+
+    <!-- RIGHT PANEL -->
+
+    <aside class="rightbar">
+
+        <input type="text" placeholder="Search NexFounder">
+
+        <div class="trending">
+
+            <h3>Trending</h3>
+
+            <p>#AI</p>
+            <p>#Startups</p>
+            <p>#BuildInPublic</p>
+            <p>#SaaS</p>
+
+        </div>
+
+    </aside>
+
+</div>
+
+</body>
+</html>
