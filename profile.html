@@ -266,94 +266,157 @@ arrayUnion,
 arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+
 let currentUser = null;
+let profileUserId = null;
 let profileData = null;
 
-const nameEl = document.getElementById("displayName");
-const userEl = document.getElementById("displayUsername");
-const bioEl = document.getElementById("displayBio");
-const avatar = document.getElementById("avatar");
+// ── GET UID FROM URL ───────────────────────
+const urlParams = new URLSearchParams(window.location.search);
+profileUserId = urlParams.get("uid");
 
-const followersCount = document.getElementById("followersCount");
-const followingCount = document.getElementById("followingCount");
+// fallback → if no uid, show your own profile
+if (!profileUserId) {
+    profileUserId = null;
+}
 
-const followBtn = document.getElementById("followBtn");
+// ── AUTH ───────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
 
-const editModal = document.getElementById("editModal");
-
-onAuthStateChanged(auth, async (user)=>{
-
-if(!user){
-    window.location.href="index.html";
+if (!user) {
+    window.location.href = "index.html";
     return;
 }
 
 currentUser = user;
 
-const ref = doc(db,"users",user.uid);
-const snap = await getDoc(ref);
-
-if(snap.exists()){
-    profileData = snap.data();
-
-    nameEl.innerText = profileData.displayName;
-    userEl.innerText = "@" + profileData.username;
-    bioEl.innerText = profileData.bio || "";
-    avatar.innerText = profileData.initials;
-
-    followersCount.innerText = (profileData.followers || []).length;
-    followingCount.innerText = (profileData.following || []).length;
+// if no uid in URL → show self profile
+if (!profileUserId) {
+    profileUserId = user.uid;
 }
+
+await loadProfile(profileUserId);
 
 });
 
-// EDIT PROFILE
-document.getElementById("saveBtn").onclick = async ()=>{
+
+// ── LOAD PROFILE ───────────────────────────
+async function loadProfile(uid) {
+
+const ref = doc(db, "users", uid);
+const snap = await getDoc(ref);
+
+if (!snap.exists()) return;
+
+profileData = snap.data();
+
+// UI update
+document.getElementById("displayName").innerText = profileData.displayName;
+document.getElementById("displayUsername").innerText = "@" + profileData.username;
+document.getElementById("displayBio").innerText = profileData.bio || "";
+document.getElementById("avatar").innerText = profileData.initials;
+
+document.getElementById("followersCount").innerText =
+(profileData.followers || []).length;
+
+document.getElementById("followingCount").innerText =
+(profileData.following || []).length;
+
+
+// ── EDIT BUTTON ONLY FOR SELF ─────────────
+if (currentUser.uid === uid) {
+    document.getElementById("openEditBtn").style.display = "inline-block";
+} else {
+    document.getElementById("openEditBtn").style.display = "none";
+}
+
+
+// ── FOLLOW BUTTON STATE ───────────────────
+const isFollowing =
+(profileData.followers || []).includes(currentUser.uid);
+
+const followBtn = document.getElementById("followBtn");
+
+if (currentUser.uid === uid) {
+    followBtn.style.display = "none"; // can't follow yourself
+} else {
+    followBtn.style.display = "inline-block";
+
+    if (isFollowing) {
+        followBtn.classList.add("following");
+        followBtn.innerText = "Following";
+    } else {
+        followBtn.classList.remove("following");
+        followBtn.innerText = "Follow";
+    }
+}
+
+
+// ── FOLLOW CLICK ──────────────────────────
+followBtn.onclick = async () => {
+
+const userRef = doc(db, "users", uid);
+const myRef = doc(db, "users", currentUser.uid);
+
+const isNowFollowing =
+profileData.followers?.includes(currentUser.uid);
+
+if (isNowFollowing) {
+
+    await updateDoc(userRef, {
+        followers: arrayRemove(currentUser.uid)
+    });
+
+    await updateDoc(myRef, {
+        following: arrayRemove(uid)
+    });
+
+} else {
+
+    await updateDoc(userRef, {
+        followers: arrayUnion(currentUser.uid)
+    });
+
+    await updateDoc(myRef, {
+        following: arrayUnion(uid)
+    });
+
+}
+
+// reload profile
+loadProfile(uid);
+
+};
+
+
+// ── EDIT PROFILE ──────────────────────────
+document.getElementById("saveBtn").onclick = async () => {
+
+if (currentUser.uid !== profileUserId) return;
 
 const name = inputName.value;
 const username = inputUsername.value;
 const bio = inputBio.value;
 
-const initials = name.split(" ").map(w=>w[0]).join("").toUpperCase();
+const initials = name.split(" ").map(w => w[0]).join("").toUpperCase();
 
-await updateDoc(doc(db,"users",currentUser.uid),{
-displayName:name,
-username:username,
-bio:bio,
-initials:initials
+await updateDoc(doc(db, "users", currentUser.uid), {
+    displayName: name,
+    username: username,
+    bio: bio,
+    initials: initials
 });
 
-location.reload();
+loadProfile(currentUser.uid);
+
+document.getElementById("editModal").classList.remove("open");
 };
 
-// FOLLOW (self logic for now)
-followBtn.onclick = async ()=>{
 
-const ref = doc(db,"users",currentUser.uid);
-
-let isFollowing = followBtn.classList.contains("following");
-
-if(isFollowing){
-await updateDoc(ref,{
-following: arrayRemove(currentUser.uid)
-});
-followBtn.classList.remove("following");
-followBtn.innerText="Follow";
-}else{
-await updateDoc(ref,{
-following: arrayUnion(currentUser.uid)
-});
-followBtn.classList.add("following");
-followBtn.innerText="Following";
-}
-
+// ── OPEN EDIT MODAL ───────────────────────
+document.getElementById("openEditBtn").onclick = () => {
+document.getElementById("editModal").classList.add("open");
 };
-
-// OPEN EDIT
-document.getElementById("openEditBtn").onclick = ()=>{
-editModal.classList.add("open");
-};
-
 </script>
 
 </body>
