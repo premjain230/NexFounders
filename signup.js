@@ -1,64 +1,34 @@
 import { auth, db } from "./firebase.js";
+import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
-createUserWithEmailAndPassword
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+window.signup = async function () {
+    const email    = document.getElementById("signupEmail").value.trim();
+    const password = document.getElementById("signupPassword").value;
+    const nameVal  = document.getElementById("signupName").value.trim();
 
-import {
-doc,
-setDoc
-}
-from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    if (!email || !password || !nameVal) {
+        alert("Please fill all fields.");
+        return;
+    }
 
-window.signup = async function(){
+    try {
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        const user = cred.user;
+        const username = email.split("@")[0];
 
-    const email =
-    document.getElementById("email").value;
-
-    const password =
-    document.getElementById("password").value;
-
-    try{
-
-        const userCredential =
-        await createUserWithEmailAndPassword(
-            auth,
-            email,
-            password
-        );
-
-        const user = userCredential.user;
-
-        // 🔥 name from email
-        let name = email.split("@")[0];
-
-        // 🔥 save profile
         await setDoc(doc(db, "users", user.uid), {
-
             email: email,
-
-            displayName: name,
-
-            username: "@" + name,
-
-            initials: name
-            .slice(0,2)
-            .toUpperCase()
-
+            displayName: nameVal,
+            username: username,
+            initials: nameVal.slice(0, 2).toUpperCase(),
+            bio: "",
+            followers: [],
+            following: []
         });
 
-        alert("Account Created!");
-
-        window.location.href =
-        "profile.html";
-
-    }
-
-    catch(error){
-
+        window.location.href = "home.html";
+    } catch (error) {
         alert(error.message);
-
     }
-
-}
+};
