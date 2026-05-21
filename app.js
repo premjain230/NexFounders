@@ -1,21 +1,35 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
 getAuth,
 GoogleAuthProvider,
 signInWithPopup
 }
-
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-/* PASTE YOUR FIREBASE CONFIG BELOW */
+import {
+getFirestore,
+doc,
+setDoc
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* YOUR FIREBASE CONFIG */
 
 const firebaseConfig = {
 
-apiKey: "AIzaSyCjctNsRXjkVcmMqRYk7qwqWy1h7cLbbjE",
-authDomain: "nexfounder-2422c.firebaseapp.com",
-projectId: "nexfounder-2422c",
-appId: "1:306339131826:web:2a6974010f4730c35fb4ab"
+  apiKey: "AIzaSyBbdi0sSpzKAj4c96sp2YtbHVWDf-q8Soc",
+
+  authDomain: "nexfounder-2422c.firebaseapp.com",
+
+  projectId: "nexfounder-2422c",
+
+  storageBucket: "nexfounder-2422c.firebasestorage.app",
+
+  messagingSenderId: "306339131826",
+
+  appId: "1:306339131826:web:6b021aef860db0ad5fb4ab"
 
 };
 
@@ -23,24 +37,61 @@ const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
 
-window.googleLogin = function(){
+const db = getFirestore(app);
 
-const provider = new GoogleAuthProvider();
+window.googleLogin = async function(){
 
-signInWithPopup(auth, provider)
+    try{
 
-.then(() => {
+        const provider =
+        new GoogleAuthProvider();
 
-alert("Login Successful");
+        // Google popup login
+        const result =
+        await signInWithPopup(
+            auth,
+            provider
+        );
 
-window.location.href = "home.html";
+        const user = result.user;
 
-})
+        // create username
+        let name =
+        user.email.split("@")[0];
 
-.catch((error) => {
+        // save profile in firestore
+        await setDoc(
+            doc(db, "users", user.uid),
+            {
 
-alert(error.message);
+                email: user.email,
 
-});
+                displayName:
+                user.displayName || name,
+
+                username:
+                "@" + name,
+
+                initials:
+                name
+                .slice(0,2)
+                .toUpperCase()
+
+            }
+        );
+
+        alert("Login Successful");
+
+        // go to profile page
+        window.location.href =
+        "profile.html";
+
+    }
+
+    catch(error){
+
+        alert(error.message);
+
+    }
 
 }
