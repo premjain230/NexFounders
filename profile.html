@@ -207,6 +207,114 @@ body{
     color:#94a3b8;
 }
 
+/* Edit Modal */
+
+.modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    z-index:100;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.modal-overlay.open{
+    display:flex;
+}
+
+.modal{
+    background:#111827;
+    border:1px solid #1f2937;
+    border-radius:20px;
+    padding:28px;
+    width:100%;
+    max-width:480px;
+}
+
+.modal-title{
+    font-size:20px;
+    font-weight:700;
+    margin-bottom:22px;
+}
+
+.field{
+    margin-bottom:16px;
+}
+
+.field label{
+    display:block;
+    font-size:13px;
+    color:#94a3b8;
+    margin-bottom:6px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+}
+
+.field input,
+.field textarea{
+    width:100%;
+    background:#0f172a;
+    border:1px solid #1e293b;
+    border-radius:10px;
+    padding:11px 14px;
+    color:white;
+    font-size:15px;
+    font-family:inherit;
+    outline:none;
+    transition:border-color 0.2s;
+}
+
+.field input:focus,
+.field textarea:focus{
+    border-color:#2563eb;
+}
+
+.field textarea{
+    resize:vertical;
+    min-height:90px;
+}
+
+.modal-actions{
+    display:flex;
+    gap:12px;
+    margin-top:22px;
+    justify-content:flex-end;
+}
+
+.cancelbtn{
+    padding:10px 18px;
+    border:1px solid #1e293b;
+    border-radius:10px;
+    background:transparent;
+    color:#94a3b8;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.cancelbtn:hover{
+    background:#1e293b;
+    color:white;
+}
+
+.savebtn{
+    padding:10px 18px;
+    border:none;
+    border-radius:10px;
+    background:#2563eb;
+    color:white;
+    font-weight:600;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.savebtn:hover{
+    background:#3b82f6;
+}
+
 @media(max-width:700px){
 
     .profilepic{
@@ -251,7 +359,7 @@ body{
         <div class="banner">
 
             <!-- Profile Pic -->
-            <div class="profilepic"></div>
+            <div class="profilepic" id="avatar"></div>
 
         </div>
 
@@ -261,18 +369,18 @@ body{
             <div class="top">
 
                 <div>
-                    <div class="name"></div>
-                    <div class="username"></div>
+                    <div class="name" id="displayName"></div>
+                    <div class="username" id="displayUsername"></div>
                 </div>
 
-                <button class="editbtn">
+                <button class="editbtn" id="openEditBtn">
                     Edit Profile
                 </button>
 
             </div>
 
             <!-- Bio -->
-            <div class="bio">
+            <div class="bio" id="displayBio">
                 No bio added yet.
             </div>
 
@@ -311,7 +419,89 @@ body{
 
 </div>
 
+<!-- Edit Profile Modal -->
+
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+
+        <div class="modal-title">Edit Profile</div>
+
+        <div class="field">
+            <label>Name</label>
+            <input type="text" id="inputName" placeholder="Your full name" />
+        </div>
+
+        <div class="field">
+            <label>Username</label>
+            <input type="text" id="inputUsername" placeholder="username" />
+        </div>
+
+        <div class="field">
+            <label>Bio</label>
+            <textarea id="inputBio" placeholder="Tell the world about yourself..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+            <button class="cancelbtn" id="cancelBtn">Cancel</button>
+            <button class="savebtn" id="saveBtn">Save Changes</button>
+        </div>
+
+    </div>
+</div>
+
 <script type="module" src="profile.js"></script>
+
+<script>
+
+const modal = document.getElementById('editModal');
+const openBtn = document.getElementById('openEditBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const saveBtn = document.getElementById('saveBtn');
+
+const displayName = document.getElementById('displayName');
+const displayUsername = document.getElementById('displayUsername');
+const displayBio = document.getElementById('displayBio');
+const avatar = document.getElementById('avatar');
+
+const inputName = document.getElementById('inputName');
+const inputUsername = document.getElementById('inputUsername');
+const inputBio = document.getElementById('inputBio');
+
+function openModal() {
+    inputName.value = displayName.textContent;
+    inputUsername.value = displayUsername.textContent.replace('@', '');
+    inputBio.value = displayBio.textContent.trim();
+    modal.classList.add('open');
+}
+
+function closeModal() {
+    modal.classList.remove('open');
+}
+
+function saveProfile() {
+    const name = inputName.value.trim() || 'Anonymous';
+    const username = inputUsername.value.trim().replace('@', '') || 'user';
+    const bio = inputBio.value.trim() || 'No bio added yet.';
+
+    displayName.textContent = name;
+    displayUsername.textContent = '@' + username;
+    displayBio.textContent = bio;
+
+    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    avatar.textContent = initials;
+
+    closeModal();
+}
+
+openBtn.addEventListener('click', openModal);
+cancelBtn.addEventListener('click', closeModal);
+saveBtn.addEventListener('click', saveProfile);
+
+modal.addEventListener('click', e => {
+    if (e.target === modal) closeModal();
+});
+
+</script>
 
 </body>
 </html>
