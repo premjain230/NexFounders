@@ -18,17 +18,13 @@ body{
     font-family:system-ui, Arial;
 }
 
-/* Navbar */
-
 .navbar{
     height:70px;
     background:#111827;
     border-bottom:1px solid #1f2937;
-
     display:flex;
     justify-content:space-between;
     align-items:center;
-
     padding:0 25px;
 }
 
@@ -53,15 +49,11 @@ body{
     color:#22d3ee;
 }
 
-/* Main */
-
 .container{
     max-width:900px;
     margin:auto;
     padding:25px;
 }
-
-/* Profile Card */
 
 .profilecard{
     background:#111827;
@@ -70,45 +62,28 @@ body{
     overflow:hidden;
 }
 
-/* Banner */
-
 .banner{
     height:220px;
-    background:linear-gradient(
-        135deg,
-        #2563eb,
-        #06b6d4,
-        #7c3aed
-    );
-
+    background:linear-gradient(135deg,#2563eb,#06b6d4,#7c3aed);
     position:relative;
 }
-
-/* Profile Pic */
 
 .profilepic{
     width:130px;
     height:130px;
     border-radius:50%;
-
     background:#22d3ee;
     color:#0f172a;
-
     border:6px solid #111827;
-
     position:absolute;
     bottom:-65px;
     left:30px;
-
     display:flex;
     justify-content:center;
     align-items:center;
-
     font-size:34px;
     font-weight:700;
 }
-
-/* Content */
 
 .profilecontent{
     padding:85px 30px 30px;
@@ -132,19 +107,14 @@ body{
     color:#94a3b8;
 }
 
-/* Button */
-
 .editbtn{
     padding:12px 18px;
     border:none;
     border-radius:12px;
-
     background:#2563eb;
     color:white;
-
     font-weight:600;
     cursor:pointer;
-
     transition:0.2s;
 }
 
@@ -153,15 +123,11 @@ body{
     transform:scale(1.03);
 }
 
-/* Bio */
-
 .bio{
     margin-top:20px;
     color:#cbd5e1;
     line-height:1.6;
 }
-
-/* Stats */
 
 .stats{
     display:flex;
@@ -173,10 +139,15 @@ body{
 .statbox{
     background:#0f172a;
     border:1px solid #1e293b;
-
     padding:14px 22px;
-
     border-radius:16px;
+    cursor:pointer;
+    transition:0.2s;
+    user-select:none;
+}
+
+.statbox:hover{
+    border-color:#2563eb;
 }
 
 .statnumber{
@@ -190,7 +161,32 @@ body{
     font-size:14px;
 }
 
-/* Empty Posts */
+.followbtn{
+    padding:12px 18px;
+    border:none;
+    border-radius:12px;
+    background:#22d3ee;
+    color:#0f172a;
+    font-weight:700;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.followbtn:hover{
+    background:#06b6d4;
+    transform:scale(1.03);
+}
+
+.followbtn.following{
+    background:transparent;
+    color:#94a3b8;
+    border:1px solid #1e293b;
+}
+
+.followbtn.following:hover{
+    background:#1e293b;
+    color:white;
+}
 
 .postsection{
     margin-top:25px;
@@ -200,14 +196,12 @@ body{
     background:#111827;
     border:1px solid #1f2937;
     border-radius:20px;
-
     padding:40px;
     text-align:center;
-
     color:#94a3b8;
 }
 
-/* Edit Modal */
+/* followers modal */
 
 .modal-overlay{
     display:none;
@@ -231,6 +225,8 @@ body{
     padding:28px;
     width:100%;
     max-width:480px;
+    max-height:80vh;
+    overflow-y:auto;
 }
 
 .modal-title{
@@ -315,18 +311,111 @@ body{
     background:#3b82f6;
 }
 
-@media(max-width:700px){
+/* user list in modal */
 
+.user-list{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+}
+
+.user-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:10px 14px;
+    background:#0f172a;
+    border-radius:12px;
+    border:1px solid #1e293b;
+}
+
+.user-info{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.user-avatar{
+    width:40px;
+    height:40px;
+    border-radius:50%;
+    background:#2563eb;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    font-weight:700;
+    flex-shrink:0;
+}
+
+.user-name{
+    font-weight:600;
+    font-size:15px;
+}
+
+.user-handle{
+    font-size:13px;
+    color:#94a3b8;
+    margin-top:2px;
+}
+
+.mini-followbtn{
+    padding:7px 14px;
+    border:none;
+    border-radius:8px;
+    background:#22d3ee;
+    color:#0f172a;
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+    transition:0.2s;
+    flex-shrink:0;
+}
+
+.mini-followbtn.following{
+    background:transparent;
+    color:#94a3b8;
+    border:1px solid #1e293b;
+}
+
+.mini-followbtn.following:hover{
+    background:#1e293b;
+    color:white;
+}
+
+.empty-list{
+    text-align:center;
+    color:#94a3b8;
+    padding:30px 0;
+    font-size:15px;
+}
+
+.modal-close{
+    float:right;
+    background:none;
+    border:none;
+    color:#94a3b8;
+    font-size:22px;
+    cursor:pointer;
+    line-height:1;
+    margin-top:-4px;
+}
+
+.modal-close:hover{
+    color:white;
+}
+
+@media(max-width:700px){
     .profilepic{
         width:110px;
         height:110px;
         font-size:28px;
     }
-
     .name{
         font-size:26px;
     }
-
 }
 
 </style>
@@ -334,118 +423,81 @@ body{
 
 <body>
 
-<!-- Navbar -->
-
 <div class="navbar">
-
-    <div class="logo">
-        NexFounder
-    </div>
-
+    <div class="logo">NexFounder</div>
     <div class="navlinks">
         <a href="home.html">Home</a>
         <a href="profile.html">Profile</a>
     </div>
-
 </div>
-
-<!-- Main -->
 
 <div class="container">
 
     <div class="profilecard">
-
-        <!-- Banner -->
         <div class="banner">
-
-            <!-- Profile Pic -->
             <div class="profilepic" id="avatar"></div>
-
         </div>
-
-        <!-- Profile Content -->
         <div class="profilecontent">
-
             <div class="top">
-
                 <div>
                     <div class="name" id="displayName"></div>
                     <div class="username" id="displayUsername"></div>
                 </div>
-
-                <button class="editbtn" id="openEditBtn">
-                    Edit Profile
-                </button>
-
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="followbtn" id="followBtn">Follow</button>
+                    <button class="editbtn" id="openEditBtn">Edit Profile</button>
+                </div>
             </div>
-
-            <!-- Bio -->
-            <div class="bio" id="displayBio">
-                No bio added yet.
-            </div>
-
-            <!-- Stats -->
+            <div class="bio" id="displayBio"></div>
             <div class="stats">
-
-                <div class="statbox">
-                    <div class="statnumber">0</div>
-                    <div class="statlabel">
-                        Followers
-                    </div>
+                <div class="statbox" id="followersBox">
+                    <div class="statnumber" id="followersCount">0</div>
+                    <div class="statlabel">Followers</div>
                 </div>
-
-                <div class="statbox">
-                    <div class="statnumber">0</div>
-                    <div class="statlabel">
-                        Following
-                    </div>
+                <div class="statbox" id="followingBox">
+                    <div class="statnumber" id="followingCount">0</div>
+                    <div class="statlabel">Following</div>
                 </div>
-
             </div>
-
         </div>
-
     </div>
 
-    <!-- Posts -->
-
     <div class="postsection">
-
-        <div class="empty">
-            No posts yet.
-        </div>
-
+        <div class="empty">No posts yet.</div>
     </div>
 
 </div>
 
 <!-- Edit Profile Modal -->
-
 <div class="modal-overlay" id="editModal">
     <div class="modal">
-
+        <button class="modal-close" id="cancelBtn">&#x2715;</button>
         <div class="modal-title">Edit Profile</div>
-
         <div class="field">
             <label>Name</label>
             <input type="text" id="inputName" placeholder="Your full name" />
         </div>
-
         <div class="field">
             <label>Username</label>
             <input type="text" id="inputUsername" placeholder="username" />
         </div>
-
         <div class="field">
             <label>Bio</label>
             <textarea id="inputBio" placeholder="Tell the world about yourself..."></textarea>
         </div>
-
         <div class="modal-actions">
-            <button class="cancelbtn" id="cancelBtn">Cancel</button>
+            <button class="cancelbtn" id="cancelBtn2">Cancel</button>
             <button class="savebtn" id="saveBtn">Save Changes</button>
         </div>
+    </div>
+</div>
 
+<!-- Followers Modal -->
+<div class="modal-overlay" id="followersModal">
+    <div class="modal">
+        <button class="modal-close" id="closeFollowersBtn">&#x2715;</button>
+        <div class="modal-title" id="followersModalTitle">Followers</div>
+        <div class="user-list" id="userList"></div>
     </div>
 </div>
 
@@ -453,53 +505,194 @@ body{
 
 <script>
 
-const modal = document.getElementById('editModal');
-const openBtn = document.getElementById('openEditBtn');
-const cancelBtn = document.getElementById('cancelBtn');
-const saveBtn = document.getElementById('saveBtn');
+// ── Storage helpers ──────────────────────────────────────────
 
-const displayName = document.getElementById('displayName');
+function getData(key, fallback) {
+    try {
+        const val = localStorage.getItem(key);
+        return val !== null ? JSON.parse(val) : fallback;
+    } catch(e) {
+        return fallback;
+    }
+}
+
+function setData(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+}
+
+// ── State ────────────────────────────────────────────────────
+
+const defaults = { name: 'Your Name', username: 'username', bio: 'No bio added yet.' };
+
+// followers = array of {id, name, username} — people who follow YOU
+// following = array of {id, name, username} — people YOU follow
+// isFollowedByViewer = whether the viewer pressed Follow on this profile
+
+let profile   = getData('nf_profile', defaults);
+let followers = getData('nf_followers', []);
+let following = getData('nf_following', []);
+let isFollowedByViewer = getData('nf_viewer_follows', false);
+
+// ── DOM refs ─────────────────────────────────────────────────
+
+const avatar          = document.getElementById('avatar');
+const displayName     = document.getElementById('displayName');
 const displayUsername = document.getElementById('displayUsername');
-const displayBio = document.getElementById('displayBio');
-const avatar = document.getElementById('avatar');
+const displayBio      = document.getElementById('displayBio');
+const followersCount  = document.getElementById('followersCount');
+const followingCount  = document.getElementById('followingCount');
+const followBtn       = document.getElementById('followBtn');
 
-const inputName = document.getElementById('inputName');
-const inputUsername = document.getElementById('inputUsername');
-const inputBio = document.getElementById('inputBio');
+const editModal       = document.getElementById('editModal');
+const openEditBtn     = document.getElementById('openEditBtn');
+const cancelBtn       = document.getElementById('cancelBtn');
+const cancelBtn2      = document.getElementById('cancelBtn2');
+const saveBtn         = document.getElementById('saveBtn');
+const inputName       = document.getElementById('inputName');
+const inputUsername   = document.getElementById('inputUsername');
+const inputBio        = document.getElementById('inputBio');
 
-function openModal() {
-    inputName.value = displayName.textContent;
-    inputUsername.value = displayUsername.textContent.replace('@', '');
-    inputBio.value = displayBio.textContent.trim();
-    modal.classList.add('open');
+const followersModal      = document.getElementById('followersModal');
+const followersModalTitle = document.getElementById('followersModalTitle');
+const closeFollowersBtn   = document.getElementById('closeFollowersBtn');
+const userList            = document.getElementById('userList');
+const followersBox        = document.getElementById('followersBox');
+const followingBox        = document.getElementById('followingBox');
+
+// ── Render ───────────────────────────────────────────────────
+
+function initials(name) {
+    return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-function closeModal() {
-    modal.classList.remove('open');
+function renderProfile() {
+    displayName.textContent     = profile.name;
+    displayUsername.textContent = '@' + profile.username;
+    displayBio.textContent      = profile.bio;
+    avatar.textContent          = initials(profile.name);
+    followersCount.textContent  = followers.length;
+    followingCount.textContent  = following.length;
+
+    if (isFollowedByViewer) {
+        followBtn.textContent = 'Following';
+        followBtn.classList.add('following');
+    } else {
+        followBtn.textContent = 'Follow';
+        followBtn.classList.remove('following');
+    }
 }
 
-function saveProfile() {
-    const name = inputName.value.trim() || 'Anonymous';
-    const username = inputUsername.value.trim().replace('@', '') || 'user';
-    const bio = inputBio.value.trim() || 'No bio added yet.';
+// ── Follow / Unfollow this profile ───────────────────────────
 
-    displayName.textContent = name;
-    displayUsername.textContent = '@' + username;
-    displayBio.textContent = bio;
-
-    const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    avatar.textContent = initials;
-
-    closeModal();
-}
-
-openBtn.addEventListener('click', openModal);
-cancelBtn.addEventListener('click', closeModal);
-saveBtn.addEventListener('click', saveProfile);
-
-modal.addEventListener('click', e => {
-    if (e.target === modal) closeModal();
+followBtn.addEventListener('click', () => {
+    if (isFollowedByViewer) {
+        // unfollow — remove viewer from followers list
+        followers = followers.filter(u => u.id !== 'viewer');
+        isFollowedByViewer = false;
+    } else {
+        // follow — add viewer to followers list
+        followers.push({ id: 'viewer', name: 'You', username: 'you' });
+        isFollowedByViewer = true;
+    }
+    setData('nf_followers', followers);
+    setData('nf_viewer_follows', isFollowedByViewer);
+    renderProfile();
 });
+
+// ── Followers / Following modal ──────────────────────────────
+
+let currentListMode = 'followers'; // or 'following'
+
+function openListModal(mode) {
+    currentListMode = mode;
+    followersModalTitle.textContent = mode === 'followers' ? 'Followers' : 'Following';
+    renderUserList();
+    followersModal.classList.add('open');
+}
+
+function renderUserList() {
+    const list = currentListMode === 'followers' ? followers : following;
+
+    if (list.length === 0) {
+        userList.innerHTML = `<div class="empty-list">${currentListMode === 'followers' ? 'No followers yet.' : 'Not following anyone yet.'}</div>`;
+        return;
+    }
+
+    userList.innerHTML = list.map(u => {
+        const isFollowingThem = following.some(f => f.id === u.id);
+        const btnClass = isFollowingThem ? 'mini-followbtn following' : 'mini-followbtn';
+        const btnText  = isFollowingThem ? 'Following' : 'Follow';
+        // don't show follow button for yourself
+        const btnHtml = u.id !== 'viewer'
+            ? `<button class="${btnClass}" data-id="${u.id}" data-name="${u.name}" data-username="${u.username}">${btnText}</button>`
+            : '';
+        return `
+            <div class="user-row">
+                <div class="user-info">
+                    <div class="user-avatar">${initials(u.name)}</div>
+                    <div>
+                        <div class="user-name">${u.name}</div>
+                        <div class="user-handle">@${u.username}</div>
+                    </div>
+                </div>
+                ${btnHtml}
+            </div>
+        `;
+    }).join('');
+
+    // bind follow buttons inside the list
+    userList.querySelectorAll('.mini-followbtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id       = btn.dataset.id;
+            const name     = btn.dataset.name;
+            const username = btn.dataset.username;
+            const alreadyFollowing = following.some(f => f.id === id);
+
+            if (alreadyFollowing) {
+                following = following.filter(f => f.id !== id);
+            } else {
+                following.push({ id, name, username });
+            }
+
+            setData('nf_following', following);
+            renderProfile();
+            renderUserList();
+        });
+    });
+}
+
+followersBox.addEventListener('click', () => openListModal('followers'));
+followingBox.addEventListener('click', () => openListModal('following'));
+closeFollowersBtn.addEventListener('click', () => followersModal.classList.remove('open'));
+followersModal.addEventListener('click', e => { if (e.target === followersModal) followersModal.classList.remove('open'); });
+
+// ── Edit Profile ─────────────────────────────────────────────
+
+openEditBtn.addEventListener('click', () => {
+    inputName.value     = profile.name;
+    inputUsername.value = profile.username;
+    inputBio.value      = profile.bio;
+    editModal.classList.add('open');
+});
+
+function closeEditModal() { editModal.classList.remove('open'); }
+
+cancelBtn.addEventListener('click', closeEditModal);
+cancelBtn2.addEventListener('click', closeEditModal);
+editModal.addEventListener('click', e => { if (e.target === editModal) closeEditModal(); });
+
+saveBtn.addEventListener('click', () => {
+    profile.name     = inputName.value.trim()    || defaults.name;
+    profile.username = inputUsername.value.trim().replace('@','') || defaults.username;
+    profile.bio      = inputBio.value.trim()     || defaults.bio;
+    setData('nf_profile', profile);
+    renderProfile();
+    closeEditModal();
+});
+
+// ── Init ─────────────────────────────────────────────────────
+
+renderProfile();
 
 </script>
 
