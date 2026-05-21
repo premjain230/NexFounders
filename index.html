@@ -1,34 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>NexFounder</title>
-
 <style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif; }
+body { background:black; color:white; }
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, sans-serif;
-}
+.container { display:flex; min-height:100vh; }
 
-body{
-    background:black;
-    color:white;
-}
-
-.container{
-    display:flex;
-    min-height:100vh;
-}
-
-/* LEFT SIDE */
-
-.left{
+.left {
     width:50%;
     background:#0a0a0a;
     display:flex;
@@ -37,181 +19,216 @@ body{
     border-right:1px solid #2f3336;
 }
 
-/* IMAGE PLACEHOLDER */
-
-.image-box{
-    width:80%;
-    height:80%;
-    border-radius:25px;
-    background:#111827;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:#71767b;
-    font-size:25px;
+.brand-box {
+    text-align:center;
 }
 
-/* RIGHT SIDE */
+.brand-box h1 {
+    font-size:52px;
+    color:#1d9bf0;
+    margin-bottom:16px;
+}
 
-.right{
+.brand-box p {
+    color:#71767b;
+    font-size:18px;
+    line-height:1.6;
+    max-width:320px;
+}
+
+.right {
     width:50%;
     display:flex;
     justify-content:center;
     align-items:center;
+    padding:40px;
 }
 
-.login-box{
-    width:400px;
+.auth-box { width:100%; max-width:400px; }
+
+.auth-box h2 { font-size:28px; margin-bottom:24px; }
+
+.tabs {
+    display:flex;
+    gap:0;
+    margin-bottom:28px;
+    border-bottom:1px solid #2f3336;
 }
 
-.logo{
-    color:#1d9bf0;
-    font-size:40px;
-    margin-bottom:10px;
-}
-
-.subtitle{
-    color:#71767b;
-    margin-bottom:40px;
-    line-height:1.5;
-}
-
-.login-box h2{
-    font-size:35px;
-    margin-bottom:30px;
-}
-
-/* INPUTS */
-
-.input-box{
-    margin-bottom:20px;
-}
-
-.input-box input{
-    width:100%;
-    padding:15px;
+.tab {
+    flex:1;
+    padding:12px;
+    background:none;
     border:none;
-    outline:none;
+    color:#71767b;
+    font-size:16px;
+    cursor:pointer;
+    border-bottom:2px solid transparent;
+    transition:0.2s;
+}
+
+.tab.active {
+    color:white;
+    border-bottom:2px solid #1d9bf0;
+    font-weight:700;
+}
+
+.panel { display:none; }
+.panel.active { display:block; }
+
+.input-box { margin-bottom:16px; }
+
+.input-box input {
+    width:100%;
+    padding:14px;
+    border:1px solid #2f3336;
     border-radius:12px;
     background:#16181c;
     color:white;
-    font-size:16px;
-    border:1px solid #2f3336;
+    font-size:15px;
+    outline:none;
+    transition:border-color 0.2s;
 }
 
-/* BUTTONS */
+.input-box input:focus { border-color:#1d9bf0; }
 
-.google-btn{
+.google-btn {
     width:100%;
     padding:14px;
     border:none;
     border-radius:30px;
     background:white;
     color:black;
-    font-size:16px;
+    font-size:15px;
     cursor:pointer;
-    margin-bottom:20px;
-    font-weight:bold;
+    font-weight:700;
+    margin-bottom:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    transition:opacity 0.2s;
 }
 
-.login-btn{
+.google-btn:hover { opacity:0.9; }
+
+.divider {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin:16px 0;
+    color:#71767b;
+    font-size:13px;
+}
+
+.divider::before,
+.divider::after {
+    content:'';
+    flex:1;
+    height:1px;
+    background:#2f3336;
+}
+
+.primary-btn {
     width:100%;
     padding:14px;
     border:none;
     border-radius:30px;
     background:#1d9bf0;
     color:white;
-    font-size:16px;
+    font-size:15px;
     cursor:pointer;
-    font-weight:bold;
-    margin-top:10px;
+    font-weight:700;
+    margin-top:8px;
+    transition:background 0.2s;
 }
 
-.google-btn:hover{
-    opacity:0.9;
+.primary-btn:hover { background:#1a8cd8; }
+
+.error {
+    color:#f87171;
+    font-size:13px;
+    margin-top:8px;
+    display:none;
 }
-
-.login-btn:hover{
-    background:#1a8cd8;
-}
-
-/* SIGNUP TEXT */
-
-.signup-text{
-    margin-top:25px;
-    text-align:center;
-    color:#71767b;
-}
-
-.signup-text a{
-    color:#1d9bf0;
-    text-decoration:none;
-}
-
-.signup-text a:hover{
-    text-decoration:underline;
-}
-
 </style>
-
 </head>
-
-<body><script type="module" src="app.js"></script>
+<body>
 
 <div class="container">
 
-    <!-- LEFT SIDE -->
-
+    <!-- LEFT -->
     <div class="left">
-
-        <div class="image-box">
-            Your Image Here
+        <div class="brand-box">
+            <h1>NexFounder</h1>
+            <p>Find founders, build startups, and launch together.</p>
         </div>
-
     </div>
 
-    <!-- RIGHT SIDE -->
-
+    <!-- RIGHT -->
     <div class="right">
+        <div class="auth-box">
 
-        <div class="login-box">
-
-            <h1 class="logo">NexFounder</h1>
-
-            <p class="subtitle">
-                Find founders, build startups,
-                and launch together.
-            </p>
-
-            <h2>Login</h2>
-
-            <button onclick="googleLogin()">
-Sign in with Google
-</button>
-
-            <div class="input-box">
-                <input type="email" placeholder="Enter your email">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('login')">Login</button>
+                <button class="tab" onclick="switchTab('signup')">Sign Up</button>
             </div>
 
-            <div class="input-box">
-                <input type="password" placeholder="Enter your password">
+            <!-- LOGIN -->
+            <div class="panel active" id="loginPanel">
+                <button class="google-btn" onclick="googleLogin()">
+                    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/><path fill="#FBBC05" d="M10.6 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.5 14.7 48 24 48z"/></svg>
+                    Sign in with Google
+                </button>
+
+                <div class="divider">or</div>
+
+                <div class="input-box">
+                    <input type="email" id="emailInput" placeholder="Email" />
+                </div>
+                <div class="input-box">
+                    <input type="password" id="passwordInput" placeholder="Password" />
+                </div>
+                <button class="primary-btn" onclick="emailLogin()">Login</button>
             </div>
 
-            <button class="login-btn">
-                Login
-            </button>
+            <!-- SIGNUP -->
+            <div class="panel" id="signupPanel">
+                <button class="google-btn" onclick="googleLogin()">
+                    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/><path fill="#FBBC05" d="M10.6 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.5 14.7 48 24 48z"/></svg>
+                    Sign up with Google
+                </button>
 
-            <div class="signup-text">
-                Don’t have an account?
-                <a href="">Sign Up</a>
+                <div class="divider">or</div>
+
+                <div class="input-box">
+                    <input type="text" id="signupName" placeholder="Full Name" />
+                </div>
+                <div class="input-box">
+                    <input type="email" id="signupEmail" placeholder="Email" />
+                </div>
+                <div class="input-box">
+                    <input type="password" id="signupPassword" placeholder="Password (min 6 chars)" />
+                </div>
+                <button class="primary-btn" onclick="signup()">Create Account</button>
             </div>
 
         </div>
-
     </div>
-
 </div>
+
+<script>
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+        t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'signup'));
+    });
+    document.getElementById('loginPanel').classList.toggle('active', tab === 'login');
+    document.getElementById('signupPanel').classList.toggle('active', tab === 'signup');
+}
+</script>
+
+<script type="module" src="app.js"></script>
 <script type="module" src="signup.js"></script>
-    
+
 </body>
 </html>
