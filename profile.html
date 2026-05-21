@@ -4,22 +4,17 @@
 <title>NexFounder Profile</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
- 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
- 
-body{
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
     background:#0f172a;
     color:white;
     font-family:system-ui, Arial;
 }
- 
+
 /* Navbar */
- 
-.navbar{
+.navbar {
     height:70px;
     background:#111827;
     border-bottom:1px solid #1f2937;
@@ -28,56 +23,38 @@ body{
     align-items:center;
     padding:0 25px;
 }
- 
-.logo{
-    font-size:24px;
-    font-weight:700;
-    color:#22d3ee;
-}
- 
-.navlinks{
-    display:flex;
-    gap:20px;
-}
- 
-.navlinks a{
+
+.logo { font-size:24px; font-weight:700; color:#22d3ee; }
+
+.navlinks { display:flex; gap:20px; }
+
+.navlinks a {
     text-decoration:none;
     color:#cbd5e1;
     transition:0.2s;
 }
- 
-.navlinks a:hover{
-    color:#22d3ee;
-}
- 
+.navlinks a:hover { color:#22d3ee; }
+
 /* Container */
- 
-.container{
-    max-width:900px;
-    margin:auto;
-    padding:25px;
-}
- 
+.container { max-width:900px; margin:auto; padding:25px; }
+
 /* Profile Card */
- 
-.profilecard{
+.profilecard {
     background:#111827;
     border:1px solid #1f2937;
     border-radius:24px;
     overflow:hidden;
 }
- 
+
 /* Banner */
- 
-.banner{
+.banner {
     height:220px;
     background:linear-gradient(135deg,#2563eb,#06b6d4,#7c3aed);
     position:relative;
 }
- 
+
 /* Profile Pic */
- 
-.profilepic{
+.profilepic {
     width:130px;
     height:130px;
     border-radius:50%;
@@ -93,46 +70,26 @@ body{
     font-size:34px;
     font-weight:700;
 }
- 
+
 /* Profile Content */
- 
-.profilecontent{
-    padding:85px 30px 30px;
-}
- 
-.top{
+.profilecontent { padding:85px 30px 30px; }
+
+.top {
     display:flex;
     justify-content:space-between;
     align-items:flex-start;
     gap:20px;
     flex-wrap:wrap;
 }
- 
-.name{
-    font-size:32px;
-    font-weight:700;
-}
- 
-.username{
-    margin-top:5px;
-    color:#94a3b8;
-}
- 
-.email{
-    margin-top:4px;
-    color:#64748b;
-    font-size:14px;
-}
- 
+
+.name { font-size:32px; font-weight:700; }
+.username { margin-top:5px; color:#94a3b8; }
+.email { margin-top:4px; color:#64748b; font-size:14px; }
+
 /* Buttons */
- 
-.btn-row{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-}
- 
-.editbtn{
+.btn-row { display:flex; gap:10px; flex-wrap:wrap; }
+
+.editbtn {
     padding:12px 18px;
     border:none;
     border-radius:12px;
@@ -141,14 +98,12 @@ body{
     font-weight:600;
     cursor:pointer;
     transition:0.2s;
+    display:inline-flex;
+    align-items:center;
 }
- 
-.editbtn:hover{
-    background:#3b82f6;
-    transform:scale(1.03);
-}
- 
-.followbtn{
+.editbtn:hover { background:#3b82f6; transform:scale(1.03); }
+
+.followbtn {
     padding:12px 18px;
     border:none;
     border-radius:12px;
@@ -157,77 +112,123 @@ body{
     font-weight:700;
     cursor:pointer;
     transition:0.2s;
+    display:inline-flex;
+    align-items:center;
 }
- 
-.followbtn:hover{
-    background:#06b6d4;
-    transform:scale(1.03);
-}
- 
-.followbtn.following{
+.followbtn:hover { background:#06b6d4; transform:scale(1.03); }
+.followbtn.following {
     background:transparent;
     color:#94a3b8;
     border:1px solid #1e293b;
 }
- 
-.followbtn.following:hover{
-    background:#1e293b;
-    color:white;
-}
- 
+.followbtn.following:hover { background:#1e293b; color:white; }
+.followbtn:disabled, .editbtn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
 /* Bio */
- 
-.bio{
-    margin-top:20px;
-    color:#cbd5e1;
-    line-height:1.6;
-}
- 
+.bio { margin-top:20px; color:#cbd5e1; line-height:1.6; }
+
 /* Stats */
- 
-.stats{
-    display:flex;
-    gap:18px;
-    margin-top:25px;
-    flex-wrap:wrap;
-}
- 
-.statbox{
+.stats { display:flex; gap:18px; margin-top:25px; flex-wrap:wrap; }
+
+.statbox {
     background:#0f172a;
     border:1px solid #1e293b;
     padding:14px 22px;
     border-radius:16px;
 }
- 
-.statnumber{
-    font-size:20px;
-    font-weight:700;
-}
- 
-.statlabel{
-    margin-top:4px;
-    color:#94a3b8;
-    font-size:14px;
-}
- 
-/* Posts */
- 
-.postsection{
-    margin-top:25px;
-}
- 
-.empty{
+.statnumber { font-size:20px; font-weight:700; }
+.statlabel { margin-top:4px; color:#94a3b8; font-size:14px; }
+
+/* Posts section */
+.postsection { margin-top:25px; }
+
+/* ── Post cards (profile page) ── */
+.post-item {
     background:#111827;
     border:1px solid #1f2937;
-    border-radius:20px;
-    padding:40px;
-    text-align:center;
-    color:#94a3b8;
+    border-radius:16px;
+    padding:16px 20px;
+    margin-bottom:12px;
+    transition:background 0.15s;
 }
- 
+.post-item:hover { background:#1a2234; }
+
+.pi-header {
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    margin-bottom:10px;
+}
+
+.pi-avatar {
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background:#2563eb;
+    color:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:15px;
+    flex-shrink:0;
+}
+
+.pi-name { font-weight:700; font-size:15px; }
+
+.profile-link { color:white; text-decoration:none; }
+.profile-link:hover { text-decoration:underline; color:#22d3ee; }
+
+.pi-username { font-size:13px; color:#64748b; margin-top:2px; }
+.pi-time { color:#475569; }
+
+.pi-text {
+    font-size:16px;
+    line-height:1.6;
+    color:#e2e8f0;
+    margin-left:56px;
+    margin-bottom:10px;
+}
+
+.pi-actions {
+    display:flex;
+    gap:14px;
+    margin-left:56px;
+}
+
+.pi-like {
+    background:none;
+    border:none;
+    color:#64748b;
+    cursor:pointer;
+    font-size:14px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px;
+    border-radius:20px;
+    transition:0.2s;
+}
+.pi-like:hover { background:#1e293b; color:#f43f5e; }
+.pi-like.liked { color:#f43f5e; }
+
+.pi-delete {
+    background:none;
+    border:none;
+    color:#64748b;
+    cursor:pointer;
+    font-size:14px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px;
+    border-radius:20px;
+    transition:0.2s;
+}
+.pi-delete:hover { background:#1e293b; color:#f43f5e; }
+
 /* Modal */
- 
-.modal-overlay{
+.modal-overlay {
     display:none;
     position:fixed;
     inset:0;
@@ -237,12 +238,9 @@ body{
     align-items:center;
     padding:20px;
 }
- 
-.modal-overlay.open{
-    display:flex;
-}
- 
-.modal{
+.modal-overlay.open { display:flex; }
+
+.modal {
     background:#111827;
     border:1px solid #1f2937;
     border-radius:20px;
@@ -250,18 +248,12 @@ body{
     width:100%;
     max-width:480px;
 }
- 
-.modal-title{
-    font-size:20px;
-    font-weight:700;
-    margin-bottom:22px;
-}
- 
-.field{
-    margin-bottom:16px;
-}
- 
-.field label{
+
+.modal-title { font-size:20px; font-weight:700; margin-bottom:22px; }
+
+.field { margin-bottom:16px; }
+
+.field label {
     display:block;
     font-size:13px;
     color:#94a3b8;
@@ -270,9 +262,9 @@ body{
     text-transform:uppercase;
     letter-spacing:0.05em;
 }
- 
+
 .field input,
-.field textarea{
+.field textarea {
     width:100%;
     background:#0f172a;
     border:1px solid #1e293b;
@@ -284,25 +276,18 @@ body{
     outline:none;
     transition:border-color 0.2s;
 }
- 
 .field input:focus,
-.field textarea:focus{
-    border-color:#2563eb;
-}
- 
-.field textarea{
-    resize:vertical;
-    min-height:90px;
-}
- 
-.modal-actions{
+.field textarea:focus { border-color:#2563eb; }
+.field textarea { resize:vertical; min-height:90px; }
+
+.modal-actions {
     display:flex;
     gap:12px;
     margin-top:22px;
     justify-content:flex-end;
 }
- 
-.cancelbtn{
+
+.cancelbtn {
     padding:10px 18px;
     border:1px solid #1e293b;
     border-radius:10px;
@@ -312,13 +297,9 @@ body{
     cursor:pointer;
     transition:0.2s;
 }
- 
-.cancelbtn:hover{
-    background:#1e293b;
-    color:white;
-}
- 
-.savebtn{
+.cancelbtn:hover { background:#1e293b; color:white; }
+
+.savebtn {
     padding:10px 18px;
     border:none;
     border-radius:10px;
@@ -328,27 +309,20 @@ body{
     cursor:pointer;
     transition:0.2s;
 }
- 
-.savebtn:hover{
-    background:#3b82f6;
+.savebtn:hover { background:#3b82f6; }
+.savebtn:disabled { opacity:0.5; cursor:not-allowed; }
+
+@media(max-width:700px) {
+    .profilepic { width:110px; height:110px; font-size:28px; }
+    .name { font-size:26px; }
+    .pi-text, .pi-actions { margin-left:0; }
 }
- 
-@media(max-width:700px){
-    .profilepic{
-        width:110px;
-        height:110px;
-        font-size:28px;
-    }
-    .name{
-        font-size:26px;
-    }
-}
- 
+
 </style>
 </head>
- 
+
 <body>
- 
+
 <!-- Navbar -->
 <div class="navbar">
     <div class="logo">NexFounder</div>
@@ -357,33 +331,33 @@ body{
         <a href="profile.html">Profile</a>
     </div>
 </div>
- 
+
 <!-- Main -->
 <div class="container">
- 
+
     <div class="profilecard">
- 
+
         <div class="banner">
             <div class="profilepic" id="avatar"></div>
         </div>
- 
+
         <div class="profilecontent">
- 
+
             <div class="top">
                 <div>
-                    <div class="name" id="displayName"></div>
+                    <div class="name"     id="displayName"></div>
                     <div class="username" id="displayUsername"></div>
-                    <div class="email" id="displayEmail"></div>
+                    <div class="email"    id="displayEmail"></div>
                 </div>
- 
+
                 <div class="btn-row">
                     <button class="followbtn" id="followBtn">Follow</button>
-                    <button class="editbtn" id="openEditBtn">Edit Profile</button>
+                    <button class="editbtn"   id="openEditBtn">Edit Profile</button>
                 </div>
             </div>
- 
+
             <div class="bio" id="displayBio"></div>
- 
+
             <div class="stats">
                 <div class="statbox">
                     <div class="statnumber" id="followersCount">0</div>
@@ -394,46 +368,45 @@ body{
                     <div class="statlabel">Following</div>
                 </div>
             </div>
- 
+
         </div>
     </div>
- 
-    <div class="postsection">
-        <div class="empty">No posts yet.</div>
+
+    <!-- FIX: added id="userPosts" so profile.js can find and populate this -->
+    <div class="postsection" id="userPosts">
+        <div style="color:#64748b;text-align:center;padding:40px;">Loading posts...</div>
     </div>
- 
+
 </div>
- 
+
 <!-- Edit Modal -->
 <div class="modal-overlay" id="editModal">
     <div class="modal">
         <div class="modal-title">Edit Profile</div>
- 
+
         <div class="field">
             <label>Name</label>
             <input type="text" id="inputName" placeholder="Your full name" />
         </div>
- 
+
         <div class="field">
             <label>Username</label>
             <input type="text" id="inputUsername" placeholder="username" />
         </div>
- 
+
         <div class="field">
             <label>Bio</label>
             <textarea id="inputBio" placeholder="Tell the world about yourself..."></textarea>
         </div>
- 
+
         <div class="modal-actions">
             <button class="cancelbtn" id="cancelBtn">Cancel</button>
-            <button class="savebtn" id="saveBtn">Save Changes</button>
+            <button class="savebtn"   id="saveBtn">Save Changes</button>
         </div>
     </div>
 </div>
- 
-<!-- Firebase loaded via profile.js module -->
+
 <script type="module" src="profile.js"></script>
- 
+
 </body>
 </html>
- 
