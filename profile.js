@@ -1,34 +1,49 @@
-// 🔥 Example email (later replace with Firebase user)
-let userEmail = "premjain@gmail.com";
+import { auth, db } from "./firebase.js";
 
-// 1. Get raw name from email
-let rawName = userEmail.split("@")[0];
-
-// 2. Username
-let username = "@" + rawName.toLowerCase();
-
-// 3. Format display name
-function formatName(name){
-    return name
-        .replace(/[0-9]/g, "")
-        .replace(/([a-z])([A-Z])/g, "$1 $2");
+import {
+onAuthStateChanged
 }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-// 4. Get initials
-function getInitials(name){
-    return name
-        .split(/[^a-zA-Z]/)
-        .filter(Boolean)
-        .map(n => n[0])
-        .join("")
-        .toUpperCase();
+import {
+doc,
+getDoc
 }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// final values
-let displayName = formatName(rawName);
-let initials = getInitials(rawName);
+onAuthStateChanged(auth, async (user) => {
 
-// 5. Inject into HTML
-document.querySelector(".name").innerText = displayName;
-document.querySelector(".username").innerText = username;
-document.querySelector(".profilepic").innerText = initials;
+    if(user){
+
+        const docRef =
+        doc(db, "users", user.uid);
+
+        const docSnap =
+        await getDoc(docRef);
+
+        if(docSnap.exists()){
+
+            let data = docSnap.data();
+
+            document.querySelector(".name")
+            .innerText = data.displayName;
+
+            document.querySelector(".username")
+            .innerText = data.username;
+
+            document.querySelector(".profilepic")
+            .innerText = data.initials;
+
+        }
+
+    }
+
+    else{
+
+        alert("Please Login");
+
+        window.location.href = "index.html";
+
+    }
+
+});
