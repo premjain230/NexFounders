@@ -84,7 +84,7 @@ window.googleLogin = async function(){
 
         // go to profile page
         window.location.href =
-        "profile.html";
+        "home.html";
 
     }
 
