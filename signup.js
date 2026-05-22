@@ -3,32 +3,29 @@ import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebase
 import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 window.signup = async function () {
-    const email    = document.getElementById("signupEmail").value.trim();
+    const email = document.getElementById("signupEmail").value.trim();
     const password = document.getElementById("signupPassword").value;
-    const nameVal  = document.getElementById("signupName").value.trim();
+    const name = document.getElementById("signupName").value.trim();
 
-    if (!email || !password || !nameVal) {
-        alert("Please fill all fields.");
+    if (!email || !password || !name) {
+        alert("Fill all fields");
         return;
     }
 
-    try {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        const user = cred.user;
-        const username = email.split("@")[0];
+    const userCred = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCred.user;
 
-        await setDoc(doc(db, "users", user.uid), {
-            email: email,
-            displayName: nameVal,
-            username: username,
-            initials: nameVal.slice(0, 2).toUpperCase(),
-            bio: "",
-            followers: [],
-            following: []
-        });
+    const username = email.split("@")[0];
 
-        window.location.href = "home.html";
-    } catch (error) {
-        alert(error.message);
-    }
+    await setDoc(doc(db, "users", user.uid), {
+        email,
+        displayName: name,
+        username,
+        initials: name.slice(0, 2).toUpperCase(),
+        bio: "",
+        followers: [],
+        following: []
+    });
+
+    window.location.href = "home.html";
 };
