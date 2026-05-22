@@ -3,15 +3,15 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/f
 import {
     collection,
     addDoc,
-    getDocs,
-    getDoc,
     doc,
+    getDoc,
     query,
     orderBy,
     serverTimestamp,
     updateDoc,
     arrayUnion,
-    arrayRemove
+    arrayRemove,
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let currentUser = null;
@@ -25,7 +25,7 @@ const navName = document.getElementById("navName");
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 
-// AUTH
+// ── AUTH ─────────────────────────────
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.href = "index.html";
@@ -41,10 +41,10 @@ onAuthStateChanged(auth, async (user) => {
         navName.textContent = currentUserData.displayName || "You";
     }
 
-    loadFeed();
+    loadFeedRealtime(); // 🔥 REAL TIME
 });
 
-// CREATE POST
+// ── POST ─────────────────────────────
 postBtn.addEventListener("click", async () => {
     const text = postInput.value.trim();
     if (!text) return;
@@ -63,62 +63,62 @@ postBtn.addEventListener("click", async () => {
 
     postInput.value = "";
     postBtn.disabled = false;
-
-    loadFeed();
 });
 
-// LOAD FEED
-async function loadFeed() {
-    feedEl.innerHTML = "Loading...";
+// ── REAL-TIME FEED ────────────────────
+function loadFeedRealtime() {
+    const q = query(
+        collection(db, "posts"),
+        orderBy("createdAt", "desc")
+    );
 
-    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-    const snap = await getDocs(q);
+    onSnapshot(q, (snapshot) => {
+        feedEl.innerHTML = "";
 
-    if (snap.empty) {
-        feedEl.innerHTML = "No posts yet.";
-        return;
-    }
+        if (snapshot.empty) {
+            feedEl.innerHTML = "No posts yet.";
+            return;
+        }
 
-    feedEl.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+            const post = docSnap.data();
+            const id = docSnap.id;
 
-    snap.forEach((docSnap) => {
-        const post = docSnap.data();
-        const id = docSnap.id;
+            const liked = (post.likes || []).includes(currentUser.uid);
+            const likeCount = (post.likes || []).length;
 
-        const liked = (post.likes || []).includes(currentUser.uid);
-        const likeCount = (post.likes || []).length;
+            const time = post.createdAt
+                ? new Date(post.createdAt.seconds * 1000).toLocaleString()
+                : "Just now";
 
-        const time = post.createdAt
-            ? new Date(post.createdAt.seconds * 1000).toLocaleString()
-            : "Just now";
+            const el = document.createElement("div");
+            el.className = "post";
 
-        const el = document.createElement("div");
-        el.className = "post";
-
-        el.innerHTML = `
-            <div class="post-header">
-                <div class="post-avatar">${post.initials || "?"}</div>
-                <div>
-                    <div class="post-name">${post.displayName}</div>
-                    <div class="post-username">@${post.username} · ${time}</div>
+            el.innerHTML = `
+                <div class="post-header">
+                    <div class="post-avatar">${post.initials || "?"}</div>
+                    <div>
+                        <div class="post-name">${post.displayName}</div>
+                        <div class="post-username">@${post.username} · ${time}</div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="post-text">${post.text}</div>
+                <div class="post-text">${post.text}</div>
 
-            <div class="post-actions">
-                <button class="like-btn ${liked ? "liked" : ""}">
-                    ${liked ? "❤️" : "🤍"} ${likeCount}
-                </button>
-            </div>
-        `;
+                <div class="post-actions">
+                    <button class="like-btn ${liked ? "liked" : ""}">
+                        ${liked ? "❤️" : "🤍"} ${likeCount}
+                    </button>
+                </div>
+            `;
 
-        el.querySelector(".like-btn").onclick = () => toggleLike(id, post.likes || []);
-        feedEl.appendChild(el);
+            el.querySelector(".like-btn").onclick = () => toggleLike(id, post.likes || []);
+            feedEl.appendChild(el);
+        });
     });
 }
 
-// LIKE SYSTEM
+// ── LIKE ─────────────────────────────
 async function toggleLike(postId, likes) {
     const ref = doc(db, "posts", postId);
     const liked = likes.includes(currentUser.uid);
@@ -128,6 +128,4 @@ async function toggleLike(postId, likes) {
             ? arrayRemove(currentUser.uid)
             : arrayUnion(currentUser.uid)
     });
-
-    loadFeed();
 }
