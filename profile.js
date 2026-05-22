@@ -43,9 +43,14 @@ const inputBio = document.getElementById("inputBio");
 const postsContainer = document.getElementById("userPosts");
 
 function initials(name = "") {
-    return name.split(" ").map(w => w[0]).join("").toUpperCase();
+    return name
+        .split(" ")
+        .map(w => w[0])
+        .join("")
+        .toUpperCase();
 }
 
+// ───────────────────────── AUTH ─────────────────────────
 onAuthStateChanged(auth, async (user) => {
     if (!user) return (location.href = "index.html");
 
@@ -80,6 +85,7 @@ onAuthStateChanged(auth, async (user) => {
     loadPosts();
 });
 
+// ───────────────────────── PROFILE UI ─────────────────────────
 function renderProfile() {
     profileData.followers = profileData.followers || [];
     profileData.following = profileData.following || [];
@@ -99,37 +105,80 @@ function renderProfile() {
         editBtn.style.display = "none";
         followBtn.style.display = "inline-block";
 
-        const isFollowing = profileData.followers.includes(currentUser.uid);
+        const isFollowing = (profileData.followers || []).includes(currentUser.uid);
 
         followBtn.textContent = isFollowing ? "Following" : "Follow";
+        followBtn.classList.toggle("following", isFollowing);
     }
 }
 
+// ───────────────────────── FOLLOW SYSTEM FIXED ─────────────────────────
 followBtn.onclick = async () => {
     const userRef = doc(db, "users", targetUid);
     const myRef = doc(db, "users", currentUser.uid);
 
-    const isFollowing = profileData.followers.includes(currentUser.uid);
+    const followers = profileData.followers || [];
+    const isFollowing = followers.includes(currentUser.uid);
 
-    await updateDoc(userRef, {
-        followers: isFollowing
-            ? arrayRemove(currentUser.uid)
-            : arrayUnion(currentUser.uid)
-    });
+    followBtn.disabled = true;
 
-    await updateDoc(myRef, {
-        following: isFollowing
-            ? arrayRemove(targetUid)
-            : arrayUnion(targetUid)
-    });
+    try {
+        // update target user
+        await updateDoc(userRef, {
+            followers: isFollowing
+                ? arrayRemove(currentUser.uid)
+                : arrayUnion(currentUser.uid)
+        });
 
-    profileData.followers = isFollowing
-        ? profileData.followers.filter(id => id !== currentUser.uid)
-        : [...profileData.followers, currentUser.uid];
+        // update my following list
+        await updateDoc(myRef, {
+            following: isFollowing
+                ? arrayRemove(targetUid)
+                : arrayUnion(targetUid)
+        });
 
+        // 🔥 IMPORTANT: re-fetch fresh data (fixes all bugs)
+        const fresh = await getDoc(userRef);
+        profileData = fresh.data();
+
+        renderProfile();
+    } catch (err) {
+        console.error("Follow error:", err);
+    }
+
+    followBtn.disabled = false;
+};
+
+// ───────────────────────── EDIT PROFILE ─────────────────────────
+editBtn.onclick = () => {
+    inputName.value = profileData.displayName;
+    inputUsername.value = profileData.username;
+    inputBio.value = profileData.bio;
+
+    editModal.classList.add("open");
+};
+
+cancelBtn.onclick = () => {
+    editModal.classList.remove("open");
+};
+
+saveBtn.onclick = async () => {
+    const updated = {
+        displayName: inputName.value,
+        username: inputUsername.value,
+        bio: inputBio.value,
+        initials: initials(inputName.value)
+    };
+
+    await updateDoc(doc(db, "users", currentUser.uid), updated);
+
+    profileData = { ...profileData, ...updated };
+
+    editModal.classList.remove("open");
     renderProfile();
 };
 
+// ───────────────────────── LOAD POSTS ─────────────────────────
 async function loadPosts() {
     postsContainer.innerHTML = "Loading...";
 
@@ -148,8 +197,8 @@ async function loadPosts() {
 
     postsContainer.innerHTML = "";
 
-    snap.forEach(doc => {
-        const post = doc.data();
+    snap.forEach(docSnap => {
+        const post = docSnap.data();
 
         const div = document.createElement("div");
         div.className = "post";
