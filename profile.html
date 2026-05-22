@@ -12,68 +12,78 @@
 }
 
 body{
-    background:#0f172a;
+    background:#0b1220;
     color:white;
     font-family:system-ui, Arial;
 }
 
-/* Navbar */
+/* ───────── NAVBAR ───────── */
 .navbar{
-    height:70px;
-    background:#111827;
+    height:65px;
+    background:#0f172a;
     display:flex;
     justify-content:space-between;
     align-items:center;
     padding:0 25px;
+    border-bottom:1px solid #1e293b;
+    position:sticky;
+    top:0;
 }
 
 .logo{
-    font-size:24px;
-    font-weight:700;
-    color:#22d3ee;
-}
-
-.navlinks{
-    display:flex;
-    gap:20px;
+    font-size:22px;
+    font-weight:800;
+    color:#38bdf8;
 }
 
 .navlinks a{
     text-decoration:none;
-    color:#cbd5e1;
+    color:#94a3b8;
+    margin-left:18px;
 }
 
 .navlinks a:hover{
-    color:#22d3ee;
+    color:#38bdf8;
 }
 
-/* Container */
+/* ───────── CONTAINER ───────── */
 .container{
     max-width:900px;
     margin:auto;
-    padding:25px;
+    padding:20px;
 }
 
-/* Profile Card */
+/* ───────── PROFILE CARD ───────── */
 .profilecard{
-    background:#111827;
-    border:1px solid #1f2937;
+    background:#0f172a;
+    border:1px solid #1e293b;
     border-radius:24px;
     overflow:hidden;
+    box-shadow:0 0 40px rgba(56,189,248,0.05);
 }
 
+/* ───────── BANNER ───────── */
 .banner{
     height:220px;
     background:linear-gradient(135deg,#2563eb,#06b6d4,#7c3aed);
     position:relative;
+    background-size:cover;
+    background-position:center;
+    cursor:pointer;
 }
 
+/* hidden input */
+#bannerInput{
+    display:none;
+}
+
+/* ───────── PROFILE PIC ───────── */
 .profilepic{
     width:130px;
     height:130px;
     border-radius:50%;
-    background:#0f172a;
-    border:4px solid #111827;
+    background:#111827;
+    border:4px solid #0f172a;
     position:absolute;
     bottom:-65px;
     left:30px;
@@ -81,78 +91,123 @@ body{
     align-items:center;
     justify-content:center;
     font-size:34px;
-    font-weight:700;
+    font-weight:800;
+    cursor:pointer;
+    background-size:cover;
+    background-position:center;
+    transition:0.2s;
 }
 
+.profilepic:hover{
+    transform:scale(1.05);
+}
+
+#avatarInput{
+    display:none;
+}
+
+/* ───────── CONTENT ───────── */
 .profilecontent{
     padding:85px 30px 30px;
 }
 
-.name{font-size:32px;font-weight:700;}
-.username{color:#94a3b8;}
-.email{color:#64748b;font-size:14px;}
+.name{
+    font-size:28px;
+    font-weight:800;
+}
 
+.username{
+    color:#94a3b8;
+}
+
+.email{
+    color:#64748b;
+    font-size:13px;
+}
+
+/* ───────── BUTTONS ───────── */
 .btn-row{
     display:flex;
     gap:10px;
+    margin-top:12px;
 }
 
 .editbtn,
 .followbtn{
-    padding:12px 18px;
+    padding:10px 16px;
     border:none;
     border-radius:10px;
     cursor:pointer;
+    font-weight:600;
 }
 
 .editbtn{
-    background:#2563eb;
+    background:#1d4ed8;
     color:white;
 }
 
+.editbtn:hover{
+    background:#2563eb;
+}
+
 .followbtn{
-    background:#22d3ee;
-    color:#0f172a;
-    font-weight:700;
+    background:#38bdf8;
+    color:#0b1220;
 }
 
 .followbtn.following{
     background:transparent;
+    border:1px solid #334155;
     color:#94a3b8;
-    border:1px solid #1e293b;
 }
 
-.bio{margin-top:20px;color:#cbd5e1;}
+/* ───────── BIO ───────── */
+.bio{
+    margin-top:18px;
+    color:#cbd5e1;
+    line-height:1.4;
+}
 
+/* ───────── STATS ───────── */
 .stats{
     display:flex;
-    gap:18px;
-    margin-top:25px;
+    gap:15px;
+    margin-top:22px;
 }
 
 .statbox{
-    background:#0f172a;
+    background:#0b1220;
     border:1px solid #1e293b;
-    padding:14px 22px;
+    padding:14px 20px;
     border-radius:16px;
+    min-width:120px;
 }
 
-.statnumber{font-size:20px;font-weight:700;}
-.statlabel{color:#94a3b8;font-size:14px;}
+.statnumber{
+    font-size:20px;
+    font-weight:800;
+}
 
-/* Posts */
-.postsection{margin-top:25px;}
+.statlabel{
+    color:#94a3b8;
+    font-size:13px;
+}
+
+/* ───────── POSTS ───────── */
+.postsection{
+    margin-top:25px;
+}
 
 .empty{
-    background:#111827;
-    border:1px solid #1f2937;
-    border-radius:20px;
+    background:#0f172a;
+    border:1px solid #1e293b;
+    border-radius:18px;
     padding:40px;
     text-align:center;
-    color:#94a3b8;
+    color:#64748b;
 }
 
-/* Modal */
+/* ───────── MODAL ───────── */
 .modal-overlay{
     display:none;
     position:fixed;
@@ -162,18 +217,21 @@ body{
     align-items:center;
 }
 
-.modal-overlay.open{display:flex;}
+.modal-overlay.open{
+    display:flex;
+}
 
 .modal{
-    background:#111827;
-    padding:28px;
+    background:#0f172a;
+    padding:25px;
     border-radius:16px;
     width:100%;
-    max-width:480px;
+    max-width:450px;
+    border:1px solid #1e293b;
 }
 
 .field{
-    margin-bottom:15px;
+    margin-bottom:12px;
 }
 
 .field input,
@@ -182,7 +240,7 @@ body{
     padding:10px;
     border-radius:10px;
     border:1px solid #1e293b;
-    background:#0f172a;
+    background:#0b1220;
     color:white;
 }
 
@@ -192,23 +250,22 @@ body{
     gap:10px;
 }
 
-.savebtn,
-.cancelbtn{
+.savebtn{
+    background:#38bdf8;
+    color:#0b1220;
+    border:none;
     padding:10px 16px;
     border-radius:10px;
-    border:none;
     cursor:pointer;
-}
-
-.savebtn{
-    background:#2563eb;
-    color:white;
 }
 
 .cancelbtn{
     background:transparent;
     border:1px solid #1e293b;
     color:#94a3b8;
+    padding:10px 16px;
+    border-radius:10px;
+    cursor:pointer;
 }
 </style>
 </head>
@@ -227,8 +284,14 @@ body{
 
 <div class="profilecard">
 
-<div class="banner">
-    <div class="profilepic" id="avatar"></div>
+<!-- BANNER (click to upload) -->
+<div class="banner" id="banner">
+    <input type="file" id="bannerInput" accept="image/*">
+</div>
+
+<!-- PROFILE PIC (click to upload) -->
+<div class="profilepic" id="avatar">
+    <input type="file" id="avatarInput" accept="image/*">
 </div>
 
 <div class="profilecontent">
