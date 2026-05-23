@@ -1,5 +1,8 @@
 import { auth, db } from "./firebase.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+    onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
     collection,
@@ -31,9 +34,8 @@ const navName = document.getElementById("navName");
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 
-// ─────────────────────────────────────
-// AUTH
-// ─────────────────────────────────────
+// ───────────────── AUTH ─────────────────
+
 onAuthStateChanged(auth, async (user) => {
 
     if (!user) {
@@ -49,26 +51,53 @@ onAuthStateChanged(auth, async (user) => {
 
         currentUserData = userSnap.data();
 
-        navAvatar.textContent =
-            currentUserData.initials || "?";
+        // NAV AVATAR
+        if(currentUserData.photoURL){
+
+            navAvatar.innerHTML = `
+                <img
+                    src="${currentUserData.photoURL}"
+                    class="nav-avatar-img"
+                >
+            `;
+
+        }else{
+
+            navAvatar.textContent =
+                currentUserData.initials || "?";
+        }
 
         navName.textContent =
             currentUserData.displayName || "You";
 
-        const createAvatar = document.getElementById("createAvatar");
+        // CREATE AVATAR
+        const createAvatar =
+            document.getElementById("createAvatar");
 
         if (createAvatar) {
-            createAvatar.textContent =
-                currentUserData.initials || "?";
+
+            if(currentUserData.photoURL){
+
+                createAvatar.innerHTML = `
+                    <img
+                        src="${currentUserData.photoURL}"
+                        class="nav-avatar-img"
+                    >
+                `;
+
+            }else{
+
+                createAvatar.textContent =
+                    currentUserData.initials || "?";
+            }
         }
     }
 
     loadFeedRealtime();
 });
 
-// ─────────────────────────────────────
-// CLOUDINARY UPLOAD
-// ─────────────────────────────────────
+// ───────────────── CLOUDINARY ─────────────────
+
 async function uploadToCloudinary(file) {
 
     const formData = new FormData();
@@ -93,9 +122,8 @@ async function uploadToCloudinary(file) {
     return data.secure_url;
 }
 
-// ─────────────────────────────────────
-// CREATE POST
-// ─────────────────────────────────────
+// ───────────────── CREATE POST ─────────────────
+
 postBtn.addEventListener("click", async () => {
 
     const text = postInput.value.trim();
@@ -141,6 +169,9 @@ postBtn.addEventListener("click", async () => {
             initials:
                 currentUserData.initials,
 
+            photoURL:
+                currentUserData.photoURL || "",
+
             likes: [],
 
             comments: [],
@@ -165,9 +196,8 @@ postBtn.addEventListener("click", async () => {
     postBtn.textContent = "Post";
 });
 
-// ─────────────────────────────────────
-// REALTIME FEED
-// ─────────────────────────────────────
+// ───────────────── REALTIME FEED ─────────────────
+
 function loadFeedRealtime() {
 
     const q = query(
@@ -223,7 +253,17 @@ function loadFeedRealtime() {
                 <div class="post-header">
 
                     <div class="post-avatar">
-                        ${post.initials || "?"}
+
+                        ${post.photoURL
+                            ? `
+                                <img
+                                    src="${post.photoURL}"
+                                    class="post-avatar-img"
+                                >
+                            `
+                            : (post.initials || "?")
+                        }
+
                     </div>
 
                     <div>
@@ -333,9 +373,8 @@ function loadFeedRealtime() {
     });
 }
 
-// ─────────────────────────────────────
-// LIKE
-// ─────────────────────────────────────
+// ───────────────── LIKE ─────────────────
+
 async function toggleLike(postId, likes) {
 
     const ref = doc(db, "posts", postId);
@@ -351,9 +390,8 @@ async function toggleLike(postId, likes) {
     });
 }
 
-// ─────────────────────────────────────
-// COMMENT
-// ─────────────────────────────────────
+// ───────────────── COMMENT ─────────────────
+
 async function addComment(postId, text) {
 
     const ref = doc(db, "posts", postId);
@@ -372,9 +410,8 @@ async function addComment(postId, text) {
     });
 }
 
-// ─────────────────────────────────────
-// SEARCH USERS
-// ─────────────────────────────────────
+// ───────────────── SEARCH USERS ─────────────────
+
 searchInput.addEventListener("input", async () => {
 
     const qText =
@@ -422,11 +459,23 @@ searchInput.addEventListener("input", async () => {
         el.className = "search-result";
 
         el.innerHTML = `
+
             <div class="search-avatar">
-                ${u.initials || "?"}
+
+                ${u.photoURL
+                    ? `
+                        <img
+                            src="${u.photoURL}"
+                            class="post-avatar-img"
+                        >
+                    `
+                    : (u.initials || "?")
+                }
+
             </div>
 
             <div>
+
                 <div style="font-weight:600">
                     ${u.displayName}
                 </div>
@@ -437,6 +486,7 @@ searchInput.addEventListener("input", async () => {
                 ">
                     @${u.username}
                 </div>
+
             </div>
         `;
 
@@ -448,9 +498,8 @@ searchInput.addEventListener("input", async () => {
     });
 });
 
-// ─────────────────────────────────────
-// CLOSE SEARCH
-// ─────────────────────────────────────
+// ───────────────── CLOSE SEARCH ─────────────────
+
 document.addEventListener("click", (e) => {
 
     if (
@@ -459,4 +508,4 @@ document.addEventListener("click", (e) => {
     ) {
         searchResults.style.display = "none";
     }
-}); 
+});
