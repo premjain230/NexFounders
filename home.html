@@ -12,12 +12,34 @@
     padding:0;
     box-sizing:border-box;
 }
+
+/* AVATAR IMAGES */
+
 .nav-avatar-img,
 .post-avatar-img{
     width:100%;
     height:100%;
     object-fit:cover;
+    border-radius:50%;
+    display:block;
 }
+
+.create-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:50%;
+    display:block;
+}
+
+.search-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:50%;
+    display:block;
+}
+
 body{
     background:#0f172a;
     color:white;
@@ -458,6 +480,7 @@ body{
     align-items:center;
     justify-content:center;
     font-weight:700;
+    overflow:hidden;
 }
 
 .trending-box{
@@ -524,8 +547,6 @@ body{
 
 <div class="layout">
 
-    <!-- SIDEBAR -->
-
     <aside class="sidebar">
 
         <div class="logo">NexFounder</div>
@@ -562,10 +583,7 @@ body{
             + Post
         </button>
 
-        <a
-            class="nav-user"
-            href="profile.html"
-        >
+        <a class="nav-user" href="profile.html">
 
             <div class="nav-avatar" id="navAvatar">?</div>
 
@@ -585,8 +603,6 @@ body{
 
     </aside>
 
-    <!-- FEED -->
-
     <main class="feed-col">
 
         <div class="feed-header">
@@ -604,8 +620,6 @@ body{
             </div>
 
         </div>
-
-        <!-- CREATE POST -->
 
         <div class="create-post">
 
@@ -638,13 +652,9 @@ body{
 
         </div>
 
-        <!-- FEED -->
-
         <div id="feed"></div>
 
     </main>
-
-    <!-- RIGHTBAR -->
 
     <aside class="rightbar">
 
