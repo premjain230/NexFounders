@@ -2,20 +2,38 @@ import { auth, db } from "./firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
-  collection, doc, getDoc, getDocs, addDoc, updateDoc,
-  query, orderBy, onSnapshot, where, setDoc,
-  serverTimestamp, writeBatch
+  collection, doc, getDoc, addDoc, setDoc,
+  query, orderBy, onSnapshot, where,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// ─────────────────────────────
+// GLOBAL STATE
+// ─────────────────────────────
 let currentUser = null;
 let currentUserData = null;
 let activeConvId = null;
 let unsubChat = null;
-let allUsersCache = [];
 
-// ─────────────────────────────────────────────
-// AUTH SAFE WRAPPER (IMPORTANT FIX)
-// ─────────────────────────────────────────────
+// ─────────────────────────────
+// DOM ELEMENTS
+// ─────────────────────────────
+const convList = document.getElementById("convList");
+const chatPanel = document.getElementById("chatPanel");
+const convSearch = document.getElementById("convSearch");
+
+const notifBadge = document.getElementById("notifBadge");
+const msgBadge = document.getElementById("msgBadge");
+
+const newMsgBtn = document.getElementById("newMsgBtn");
+const newMsgModal = document.getElementById("newMsgModal");
+const modalClose = document.getElementById("modalClose");
+const modalSearch = document.getElementById("modalSearch");
+const modalUserList = document.getElementById("modalUserList");
+
+// ─────────────────────────────
+// AUTH
+// ─────────────────────────────
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     location.href = "index.html";
@@ -38,28 +56,31 @@ onAuthStateChanged(auth, async (user) => {
   if (uid) openOrCreateConversation(uid);
 });
 
+// ─────────────────────────────
+// NAV UI
+// ─────────────────────────────
 function setNavAvatar() {
   const el = document.getElementById("navAvatar");
   document.getElementById("navName").textContent =
     currentUserData.displayName || "You";
 
   if (currentUserData.photoURL) {
-    el.innerHTML = `<img src="${currentUserData.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    el.innerHTML = `<img src="${currentUserData.photoURL}">`;
   } else {
     el.textContent = currentUserData.initials || "?";
   }
 }
 
-// ─────────────────────────────────────────────
+// ─────────────────────────────
 // CONVERSATION ID
-// ─────────────────────────────────────────────
+// ─────────────────────────────
 function convId(uid1, uid2) {
   return [uid1, uid2].sort().join("_");
 }
 
-// ─────────────────────────────────────────────
-// LOAD CONVERSATIONS (SAFE)
-// ─────────────────────────────────────────────
+// ─────────────────────────────
+// LOAD CONVERSATIONS
+// ─────────────────────────────
 function loadConversations(filter = "") {
   const q = query(
     collection(db, "conversations"),
@@ -82,7 +103,8 @@ function loadConversations(filter = "") {
         ? otherSnap.data()
         : { displayName: "User", initials: "?" };
 
-      if (filter &&
+      if (
+        filter &&
         !other.displayName?.toLowerCase().includes(filter.toLowerCase())
       ) continue;
 
@@ -91,8 +113,10 @@ function loadConversations(filter = "") {
       el.onclick = () => openChat(conv.id, otherId, other);
 
       el.innerHTML = `
-        <div>${other.displayName || "User"}</div>
-        <div>${conv.lastMessage || ""}</div>
+        <div>
+          <div class="conv-name">${other.displayName || "User"}</div>
+          <div class="conv-preview">${conv.lastMessage || ""}</div>
+        </div>
       `;
 
       convList.appendChild(el);
@@ -100,9 +124,9 @@ function loadConversations(filter = "") {
   });
 }
 
-// ─────────────────────────────────────────────
-// OPEN CHAT (FIXED SNAPSHOT SAFETY)
-// ─────────────────────────────────────────────
+// ─────────────────────────────
+// OPEN CHAT
+// ─────────────────────────────
 async function openChat(cid, otherId, other) {
   if (unsubChat) unsubChat();
 
@@ -110,11 +134,13 @@ async function openChat(cid, otherId, other) {
 
   chatPanel.innerHTML = `
     <div class="chat-header">
-      <div>${other.displayName || "User"}</div>
+      <div class="chat-header-name">${other.displayName || "User"}</div>
     </div>
-    <div id="messagesArea"></div>
-    <div>
-      <input id="msgInput" type="text">
+
+    <div id="messagesArea" class="messages-area"></div>
+
+    <div class="send-area">
+      <input id="msgInput" type="text" placeholder="Message...">
       <button id="sendBtn">Send</button>
     </div>
   `;
@@ -125,7 +151,6 @@ async function openChat(cid, otherId, other) {
 
   sendBtn.onclick = () => sendMessage(cid, otherId, msgInput);
 
-  // ✅ SAFE LISTENER (FIXED)
   const q = query(
     collection(db, "messages"),
     where("convId", "==", cid),
@@ -137,9 +162,16 @@ async function openChat(cid, otherId, other) {
 
     snap.forEach(d => {
       const m = d.data();
-      const div = document.createElement("div");
 
-      div.textContent = m.text;
+      const div = document.createElement("div");
+      div.className =
+        m.fromUid === currentUser.uid ? "msg-bubble msg-mine" : "msg-bubble msg-other";
+
+      div.innerHTML = `
+        ${m.text}
+        <div class="msg-time"></div>
+      `;
+
       messagesArea.appendChild(div);
     });
 
@@ -147,9 +179,9 @@ async function openChat(cid, otherId, other) {
   });
 }
 
-// ─────────────────────────────────────────────
-// SEND MESSAGE (SAFE)
-// ─────────────────────────────────────────────
+// ─────────────────────────────
+// SEND MESSAGE
+// ─────────────────────────────
 async function sendMessage(cid, toUid, input) {
   const text = input.value.trim();
   if (!text) return;
@@ -165,9 +197,7 @@ async function sendMessage(cid, toUid, input) {
     createdAt: serverTimestamp()
   });
 
-  const convRef = doc(db, "conversations", cid);
-
-  await setDoc(convRef, {
+  await setDoc(doc(db, "conversations", cid), {
     participants: [currentUser.uid, toUid],
     lastMessage: text,
     lastMessageAt: serverTimestamp(),
@@ -175,9 +205,9 @@ async function sendMessage(cid, toUid, input) {
   }, { merge: true });
 }
 
-// ─────────────────────────────────────────────
+// ─────────────────────────────
 // OPEN OR CREATE CHAT
-// ─────────────────────────────────────────────
+// ─────────────────────────────
 async function openOrCreateConversation(otherId) {
   const cid = convId(currentUser.uid, otherId);
 
@@ -188,3 +218,47 @@ async function openOrCreateConversation(otherId) {
 
   openChat(cid, otherId, other);
 }
+
+// ─────────────────────────────
+// SEARCH CONVERSATIONS
+// ─────────────────────────────
+convSearch.addEventListener("input", (e) => {
+  loadConversations(e.target.value);
+});
+
+// ─────────────────────────────
+// BADGES (FIXED - replaces missing watchBadges)
+// ─────────────────────────────
+function watchBadges() {
+  const q = query(
+    collection(db, "conversations"),
+    where("participants", "array-contains", currentUser.uid)
+  );
+
+  onSnapshot(q, (snap) => {
+    let unread = 0;
+
+    snap.forEach(d => {
+      const data = d.data();
+      if (data.unreadBy?.includes(currentUser.uid)) {
+        unread++;
+      }
+    });
+
+    if (msgBadge) {
+      msgBadge.textContent = unread > 0 ? unread : "";
+      msgBadge.classList.toggle("show", unread > 0);
+    }
+  });
+}
+
+// ─────────────────────────────
+// MODAL (basic working)
+// ─────────────────────────────
+newMsgBtn.onclick = () => {
+  newMsgModal.classList.add("open");
+};
+
+modalClose.onclick = () => {
+  newMsgModal.classList.remove("open");
+};
