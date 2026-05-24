@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>NexFounder – Find your co-founder</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,8 +31,6 @@
   --text:#f1f5f9;
   --muted:#64748b;
   --muted2:#94a3b8;
-
-  --shadow:0 20px 60px rgba(0,0,0,.35);
 }
 
 *{
@@ -44,9 +46,12 @@ html{
 body{
   background:var(--bg);
   color:var(--text);
+
   font-family:'DM Sans',sans-serif;
+
   min-height:100vh;
   overflow-x:hidden;
+
   -webkit-font-smoothing:antialiased;
 }
 
@@ -57,32 +62,42 @@ body{
 .bg-mesh{
   position:fixed;
   inset:0;
+  overflow:hidden;
   pointer-events:none;
   z-index:0;
-  overflow:hidden;
 }
 
 .bg-mesh::before{
   content:'';
   position:absolute;
+
   width:700px;
   height:700px;
+
   border-radius:50%;
+
   background:radial-gradient(circle, rgba(34,211,238,0.07) 0%, transparent 70%);
+
   top:-200px;
   left:-150px;
+
   animation:drift1 18s ease-in-out infinite alternate;
 }
 
 .bg-mesh::after{
   content:'';
   position:absolute;
+
   width:600px;
   height:600px;
+
   border-radius:50%;
+
   background:radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
+
   bottom:-150px;
   right:-100px;
+
   animation:drift2 22s ease-in-out infinite alternate;
 }
 
@@ -107,11 +122,14 @@ body{
 .grid-lines{
   position:fixed;
   inset:0;
-  pointer-events:none;
+
   z-index:0;
+  pointer-events:none;
+
   background-image:
     linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+
   background-size:60px 60px;
 }
 
@@ -124,26 +142,28 @@ body{
   z-index:1;
 
   display:flex;
+  justify-content:space-between;
   align-items:stretch;
 
   min-height:100vh;
 }
 
 /* =========================
-   LEFT SIDE
+   LEFT
 ========================= */
 
 .left{
-  width:55%;
+  flex:1.1;
+
   display:flex;
   flex-direction:column;
   justify-content:center;
 
-  padding:70px 72px;
+  padding:80px 72px;
 
   border-right:1px solid var(--border);
 
-  position:relative;
+  min-width:0;
 }
 
 .brand-tag{
@@ -153,23 +173,23 @@ body{
   align-items:center;
   gap:8px;
 
+  padding:7px 14px;
+
+  border-radius:999px;
+
   background:rgba(34,211,238,0.08);
 
   border:1px solid rgba(34,211,238,0.18);
 
-  border-radius:100px;
-
-  padding:7px 14px;
+  color:var(--cyan);
 
   font-size:12px;
   font-weight:700;
 
-  color:var(--cyan);
-
-  letter-spacing:.05em;
   text-transform:uppercase;
+  letter-spacing:.05em;
 
-  margin-bottom:26px;
+  margin-bottom:28px;
 
   animation:fadeSlideUp .6s ease both;
 }
@@ -199,33 +219,36 @@ body{
 
 .brand-logo{
   font-family:'Syne',sans-serif;
+
   font-size:72px;
+  font-weight:800;
   line-height:1;
 
-  font-weight:800;
+  margin-bottom:24px;
 
-  background:linear-gradient(135deg,#fff 0%, var(--cyan) 60%, var(--blue) 100%);
+  background:linear-gradient(
+    135deg,
+    #fff 0%,
+    var(--cyan) 60%,
+    var(--blue) 100%
+  );
 
   -webkit-background-clip:text;
   -webkit-text-fill-color:transparent;
   background-clip:text;
 
-  margin-bottom:24px;
-
   animation:fadeSlideUp .6s .1s ease both;
-
-  word-break:break-word;
 }
 
 .brand-tagline{
-  max-width:480px;
+  max-width:500px;
 
   color:var(--muted2);
 
   font-size:20px;
   line-height:1.7;
 
-  margin-bottom:46px;
+  margin-bottom:48px;
 
   animation:fadeSlideUp .6s .2s ease both;
 }
@@ -254,13 +277,13 @@ body{
   width:42px;
   height:42px;
 
-  flex-shrink:0;
+  border-radius:14px;
 
   display:flex;
   align-items:center;
   justify-content:center;
 
-  border-radius:14px;
+  flex-shrink:0;
 
   background:rgba(34,211,238,0.08);
 
@@ -271,6 +294,7 @@ body{
 
 .feature-text{
   color:var(--muted2);
+
   font-size:15px;
   line-height:1.5;
 }
@@ -296,6 +320,7 @@ body{
 
 .stat-num{
   font-family:'Syne',sans-serif;
+
   font-size:30px;
   font-weight:800;
 
@@ -305,21 +330,24 @@ body{
 .stat-label{
   font-size:13px;
   color:var(--muted);
+
   margin-top:3px;
 }
 
 /* =========================
-   RIGHT SIDE
+   RIGHT
 ========================= */
 
 .right{
-  width:45%;
+  flex:.9;
 
   display:flex;
   align-items:center;
   justify-content:center;
 
-  padding:50px 32px;
+  padding:60px 48px;
+
+  min-width:0;
 }
 
 .auth-box{
@@ -328,21 +356,21 @@ body{
 
   padding:34px;
 
-  border:1px solid rgba(255,255,255,.06);
+  border-radius:28px;
 
-  background:rgba(11,18,32,.72);
+  background:rgba(11,18,32,0.75);
+
+  border:1px solid rgba(255,255,255,0.06);
 
   backdrop-filter:blur(18px);
 
-  border-radius:28px;
-
-  box-shadow:var(--shadow);
-
-  animation:fadeSlideUp .7s .15s ease both;
+  box-shadow:
+    0 10px 40px rgba(0,0,0,0.35);
 }
 
 .auth-title{
   font-family:'Syne',sans-serif;
+
   font-size:32px;
   font-weight:800;
 
@@ -351,8 +379,8 @@ body{
 
 .auth-sub{
   color:var(--muted);
-  font-size:14px;
 
+  font-size:14px;
   line-height:1.6;
 
   margin-bottom:30px;
@@ -364,13 +392,13 @@ body{
   display:flex;
   gap:4px;
 
-  background:var(--bg3);
-
-  border:1px solid var(--border);
+  padding:4px;
 
   border-radius:16px;
 
-  padding:4px;
+  background:var(--bg3);
+
+  border:1px solid var(--border);
 
   margin-bottom:26px;
 }
@@ -392,11 +420,11 @@ body{
   font-size:14px;
   font-weight:700;
 
+  font-family:'DM Sans',sans-serif;
+
   cursor:pointer;
 
   transition:.2s ease;
-
-  font-family:'DM Sans',sans-serif;
 }
 
 .tab.active{
@@ -404,7 +432,7 @@ body{
 
   color:var(--text);
 
-  box-shadow:0 2px 12px rgba(0,0,0,.3);
+  box-shadow:0 2px 12px rgba(0,0,0,.25);
 }
 
 /* PANELS */
@@ -427,17 +455,15 @@ body{
   justify-content:center;
   gap:10px;
 
-  border:1px solid var(--border2);
-
-  background:rgba(255,255,255,.04);
-
-  backdrop-filter:blur(10px);
-
-  color:var(--text);
+  padding:14px 16px;
 
   border-radius:16px;
 
-  padding:14px 16px;
+  border:1px solid var(--border2);
+
+  background:rgba(255,255,255,0.04);
+
+  color:var(--text);
 
   font-size:15px;
   font-weight:700;
@@ -452,9 +478,7 @@ body{
 .google-btn:hover{
   transform:translateY(-2px);
 
-  background:rgba(255,255,255,.07);
-
-  border-color:#3b4d6c;
+  background:rgba(255,255,255,0.07);
 }
 
 .primary-btn{
@@ -463,52 +487,35 @@ body{
   border:none;
   outline:none;
 
-  border-radius:16px;
-
   padding:15px;
+
+  border-radius:16px;
 
   margin-top:6px;
 
-  cursor:pointer;
-
-  position:relative;
-  overflow:hidden;
+  background:linear-gradient(
+    135deg,
+    var(--cyan) 0%,
+    var(--blue) 100%
+  );
 
   color:white;
 
   font-size:15px;
   font-weight:700;
 
-  background:linear-gradient(135deg,var(--cyan) 0%, var(--blue) 100%);
+  cursor:pointer;
 
   transition:.25s ease;
+
+  position:relative;
+  overflow:hidden;
 }
 
 .primary-btn:hover{
   transform:translateY(-2px);
 
-  box-shadow:0 10px 30px rgba(34,211,238,.25);
-}
-
-.primary-btn::after{
-  content:'';
-
-  position:absolute;
-  inset:0;
-
-  background:linear-gradient(
-    135deg,
-    rgba(255,255,255,.12) 0%,
-    transparent 60%
-  );
-
-  opacity:0;
-
-  transition:.25s ease;
-}
-
-.primary-btn:hover::after{
-  opacity:1;
+  box-shadow:0 10px 28px rgba(34,211,238,0.25);
 }
 
 /* DIVIDER */
@@ -530,7 +537,6 @@ body{
   content:'';
 
   flex:1;
-
   height:1px;
 
   background:var(--border);
@@ -579,14 +585,14 @@ body{
 /* TERMS */
 
 .auth-terms{
-  margin-top:20px;
-
   text-align:center;
 
   font-size:12px;
   line-height:1.7;
 
   color:var(--muted);
+
+  margin-top:20px;
 }
 
 .auth-terms a{
@@ -595,13 +601,13 @@ body{
 }
 
 /* =========================
-   ANIMATION
+   ANIMATIONS
 ========================= */
 
 @keyframes fadeSlideUp{
   from{
     opacity:0;
-    transform:translateY(22px);
+    transform:translateY(20px);
   }
 
   to{
@@ -614,14 +620,14 @@ body{
    RESPONSIVE
 ========================= */
 
-@media (max-width:1100px){
+@media(max-width:1200px){
 
   .left{
-    padding:60px 48px;
+    padding:70px 52px;
   }
 
   .right{
-    padding:40px 24px;
+    padding:50px 36px;
   }
 
   .brand-logo{
@@ -630,7 +636,7 @@ body{
 
 }
 
-@media (max-width:900px){
+@media(max-width:900px){
 
   .container{
     flex-direction:column;
@@ -639,17 +645,18 @@ body{
   .left,
   .right{
     width:100%;
+    flex:none;
   }
 
   .left{
     border-right:none;
     border-bottom:1px solid var(--border);
 
-    padding:54px 26px 42px;
+    padding:54px 28px 42px;
   }
 
   .right{
-    padding:34px 18px 50px;
+    padding:36px 18px 50px;
   }
 
   .auth-box{
@@ -657,7 +664,7 @@ body{
   }
 
   .brand-logo{
-    font-size:50px;
+    font-size:48px;
   }
 
   .brand-tagline{
@@ -665,51 +672,12 @@ body{
     margin-bottom:34px;
   }
 
-  .stats-row{
-    gap:24px;
-    margin-top:40px;
-  }
-
 }
 
-@media (max-width:640px){
-
-  .features{
-    gap:14px;
-  }
-
-  .feature-item{
-    align-items:flex-start;
-  }
-
-  .feature-text{
-    font-size:14px;
-  }
-
-  .auth-box{
-    padding:24px 18px;
-    border-radius:22px;
-  }
-
-  .auth-title{
-    font-size:26px;
-  }
-
-  .brand-logo{
-    font-size:42px;
-  }
-
-  .brand-tag{
-    font-size:11px;
-    padding:6px 12px;
-  }
-
-}
-
-@media (max-width:480px){
+@media(max-width:480px){
 
   .left{
-    padding:42px 18px 36px;
+    padding:42px 18px 34px;
   }
 
   .right{
@@ -717,32 +685,21 @@ body{
   }
 
   .brand-logo{
-    font-size:36px;
+    font-size:38px;
   }
 
   .brand-tagline{
     font-size:15px;
-    line-height:1.65;
   }
 
-  .tabs{
-    margin-bottom:20px;
-  }
-
-  .tab{
-    font-size:13px;
-    padding:11px;
-  }
-
-  .google-btn,
-  .primary-btn,
-  .input-box input{
-    font-size:14px;
+  .auth-box{
+    padding:22px 18px;
+    border-radius:22px;
   }
 
   .stats-row{
     justify-content:space-between;
-    gap:16px;
+    gap:18px;
   }
 
   .stat-num{
@@ -865,19 +822,11 @@ img{
 
       <div class="tabs">
 
-        <button
-          class="tab active"
-          data-tab="login"
-          type="button"
-        >
+        <button class="tab active" type="button" onclick="switchTab('login')">
           Login
         </button>
 
-        <button
-          class="tab"
-          data-tab="signup"
-          type="button"
-        >
+        <button class="tab" type="button" onclick="switchTab('signup')">
           Sign Up
         </button>
 
@@ -972,25 +921,14 @@ img{
 
 <script>
 
-const tabs = document.querySelectorAll('.tab');
-
-tabs.forEach(tab => {
-
-  tab.addEventListener('click', () => {
-
-    switchTab(tab.dataset.tab);
-
-  });
-
-});
-
 function switchTab(tab){
 
-  tabs.forEach(btn => {
+  document.querySelectorAll('.tab').forEach((t, i) => {
 
-    btn.classList.toggle(
+    t.classList.toggle(
       'active',
-      btn.dataset.tab === tab
+      (i === 0 && tab === 'login') ||
+      (i === 1 && tab === 'signup')
     );
 
   });
@@ -1003,24 +941,15 @@ function switchTab(tab){
     .getElementById('signupPanel')
     .classList.toggle('active', tab === 'signup');
 
-  const title = document.querySelector('.auth-title');
-  const sub = document.querySelector('.auth-sub');
+  document.querySelector('.auth-title').textContent =
+    tab === 'login'
+      ? 'Welcome back 👋'
+      : 'Join NexFounder 🚀';
 
-  if(tab === 'login'){
-
-    title.textContent = 'Welcome back 👋';
-
-    sub.textContent =
-      'Sign in to continue building your future';
-
-  } else {
-
-    title.textContent = 'Join NexFounder 🚀';
-
-    sub.textContent =
-      'Create your account and find your co-founder';
-
-  }
+  document.querySelector('.auth-sub').textContent =
+    tab === 'login'
+      ? 'Sign in to continue building your future'
+      : 'Create your account and find your co-founder';
 
 }
 
