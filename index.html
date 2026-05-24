@@ -1,373 +1,773 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>NexFounder – Find your co-founder</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-:root {
-  --cyan:    #22d3ee;
-  --cyan-d:  #06b6d4;
-  --blue:    #2563eb;
-  --bg:      #020817;
-  --bg2:     #0b1220;
-  --bg3:     #0f172a;
-  --border:  #1e293b;
-  --border2: #2a3a54;
-  --text:    #f1f5f9;
-  --muted:   #64748b;
-  --muted2:  #94a3b8;
+
+:root{
+  --cyan:#22d3ee;
+  --cyan-d:#06b6d4;
+  --blue:#2563eb;
+
+  --bg:#020817;
+  --bg2:#0b1220;
+  --bg3:#0f172a;
+
+  --border:#1e293b;
+  --border2:#2a3a54;
+
+  --text:#f1f5f9;
+  --muted:#64748b;
+  --muted2:#94a3b8;
+
+  --shadow:0 20px 60px rgba(0,0,0,.35);
 }
 
-* { margin:0; padding:0; box-sizing:border-box; }
-
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  min-height: 100vh;
-  overflow-x: hidden;
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
 }
 
-/* ── ANIMATED BACKGROUND ── */
-.bg-mesh {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
+html{
+  scroll-behavior:smooth;
 }
-.bg-mesh::before {
-  content: '';
-  position: absolute;
-  width: 700px; height: 700px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(34,211,238,0.07) 0%, transparent 70%);
-  top: -200px; left: -150px;
-  animation: drift1 18s ease-in-out infinite alternate;
-}
-.bg-mesh::after {
-  content: '';
-  position: absolute;
-  width: 600px; height: 600px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
-  bottom: -150px; right: -100px;
-  animation: drift2 22s ease-in-out infinite alternate;
-}
-@keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(80px,60px) scale(1.1); } }
-@keyframes drift2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-60px,-80px) scale(1.08); } }
 
-/* ── GRID LINES ── */
-.grid-lines {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* =========================
+   BACKGROUND
+========================= */
+
+.bg-mesh{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  overflow:hidden;
+}
+
+.bg-mesh::before{
+  content:'';
+  position:absolute;
+  width:700px;
+  height:700px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(34,211,238,0.07) 0%, transparent 70%);
+  top:-200px;
+  left:-150px;
+  animation:drift1 18s ease-in-out infinite alternate;
+}
+
+.bg-mesh::after{
+  content:'';
+  position:absolute;
+  width:600px;
+  height:600px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
+  bottom:-150px;
+  right:-100px;
+  animation:drift2 22s ease-in-out infinite alternate;
+}
+
+@keyframes drift1{
+  from{
+    transform:translate(0,0) scale(1);
+  }
+  to{
+    transform:translate(80px,60px) scale(1.1);
+  }
+}
+
+@keyframes drift2{
+  from{
+    transform:translate(0,0) scale(1);
+  }
+  to{
+    transform:translate(-60px,-80px) scale(1.08);
+  }
+}
+
+.grid-lines{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
   background-image:
     linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
-  background-size: 60px 60px;
+  background-size:60px 60px;
 }
 
-/* ── LAYOUT ── */
-.container {
-  display: flex;
-  min-height: 100vh;
-  position: relative;
-  z-index: 1;
+/* =========================
+   LAYOUT
+========================= */
+
+.container{
+  position:relative;
+  z-index:1;
+
+  display:flex;
+  align-items:stretch;
+
+  min-height:100vh;
 }
 
-/* ── LEFT BRAND PANEL ── */
-.left {
-  width: 55%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 80px 72px;
-  border-right: 1px solid var(--border);
-  position: relative;
+/* =========================
+   LEFT SIDE
+========================= */
+
+.left{
+  width:55%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+
+  padding:70px 72px;
+
+  border-right:1px solid var(--border);
+
+  position:relative;
 }
 
-.brand-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(34,211,238,0.08);
-  border: 1px solid rgba(34,211,238,0.18);
-  border-radius: 100px;
-  padding: 6px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--cyan);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin-bottom: 28px;
-  animation: fadeSlideUp 0.6s ease both;
-}
-.brand-tag-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--cyan);
-  animation: pulse-dot 2s ease infinite;
-}
-@keyframes pulse-dot {
-  0%,100% { opacity:1; transform:scale(1); }
-  50% { opacity:0.5; transform:scale(0.7); }
+.brand-tag{
+  width:fit-content;
+
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+
+  background:rgba(34,211,238,0.08);
+
+  border:1px solid rgba(34,211,238,0.18);
+
+  border-radius:100px;
+
+  padding:7px 14px;
+
+  font-size:12px;
+  font-weight:700;
+
+  color:var(--cyan);
+
+  letter-spacing:.05em;
+  text-transform:uppercase;
+
+  margin-bottom:26px;
+
+  animation:fadeSlideUp .6s ease both;
 }
 
-.brand-logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 68px;
-  font-weight: 800;
-  line-height: 1;
-  background: linear-gradient(135deg, #fff 0%, var(--cyan) 60%, var(--blue) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 24px;
-  animation: fadeSlideUp 0.6s 0.1s ease both;
+.brand-tag-dot{
+  width:7px;
+  height:7px;
+
+  border-radius:50%;
+
+  background:var(--cyan);
+
+  animation:pulse-dot 2s ease infinite;
 }
 
-.brand-tagline {
-  font-size: 20px;
-  color: var(--muted2);
-  line-height: 1.65;
-  max-width: 400px;
-  margin-bottom: 48px;
-  font-weight: 400;
-  animation: fadeSlideUp 0.6s 0.2s ease both;
-}
-.brand-tagline b { color: var(--text); font-weight: 600; }
+@keyframes pulse-dot{
+  0%,100%{
+    opacity:1;
+    transform:scale(1);
+  }
 
-/* Feature pills */
-.features {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  animation: fadeSlideUp 0.6s 0.3s ease both;
-}
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.feature-icon {
-  width: 40px; height: 40px;
-  border-radius: 12px;
-  background: rgba(34,211,238,0.08);
-  border: 1px solid rgba(34,211,238,0.15);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-}
-.feature-text { color: var(--muted2); font-size: 15px; }
-.feature-text b { color: var(--text); font-weight: 600; }
-
-/* Stats row */
-.stats-row {
-  display: flex;
-  gap: 40px;
-  margin-top: 56px;
-  padding-top: 40px;
-  border-top: 1px solid var(--border);
-  animation: fadeSlideUp 0.6s 0.4s ease both;
-}
-.stat-item {}
-.stat-num {
-  font-family: 'Syne', sans-serif;
-  font-size: 28px;
-  font-weight: 800;
-  color: var(--cyan);
-}
-.stat-label { font-size: 13px; color: var(--muted); margin-top: 2px; }
-
-/* ── RIGHT AUTH PANEL ── */
-.right {
-  width: 45%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 60px 56px;
+  50%{
+    opacity:.5;
+    transform:scale(.75);
+  }
 }
 
-.auth-box {
-  width: 100%;
-  max-width: 400px;
-  animation: fadeSlideUp 0.7s 0.15s ease both;
+.brand-logo{
+  font-family:'Syne',sans-serif;
+  font-size:72px;
+  line-height:1;
+
+  font-weight:800;
+
+  background:linear-gradient(135deg,#fff 0%, var(--cyan) 60%, var(--blue) 100%);
+
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+
+  margin-bottom:24px;
+
+  animation:fadeSlideUp .6s .1s ease both;
+
+  word-break:break-word;
 }
 
-.auth-title {
-  font-family: 'Syne', sans-serif;
-  font-size: 30px;
-  font-weight: 800;
-  margin-bottom: 8px;
-}
-.auth-sub {
-  color: var(--muted);
-  font-size: 14px;
-  margin-bottom: 32px;
+.brand-tagline{
+  max-width:480px;
+
+  color:var(--muted2);
+
+  font-size:20px;
+  line-height:1.7;
+
+  margin-bottom:46px;
+
+  animation:fadeSlideUp .6s .2s ease both;
 }
 
-/* Tabs */
-.tabs {
-  display: flex;
-  background: var(--bg3);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 4px;
-  margin-bottom: 28px;
-  gap: 4px;
-}
-.tab {
-  flex: 1;
-  padding: 11px;
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  border-radius: 12px;
-  transition: all 0.22s;
-}
-.tab.active {
-  background: var(--bg2);
-  color: var(--text);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+.brand-tagline b{
+  color:var(--text);
 }
 
-.panel { display:none; }
-.panel.active { display:block; }
+/* FEATURES */
 
-/* Google btn */
-.google-btn {
-  width: 100%;
-  padding: 14px;
-  border: 1px solid var(--border2);
-  border-radius: 14px;
-  background: rgba(255,255,255,0.04);
-  color: var(--text);
-  font-size: 15px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  transition: all 0.2s;
-  backdrop-filter: blur(8px);
-}
-.google-btn:hover {
-  background: rgba(255,255,255,0.08);
-  border-color: var(--border2);
-  transform: translateY(-1px);
+.features{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+
+  animation:fadeSlideUp .6s .3s ease both;
 }
 
-/* Divider */
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 20px;
-  color: var(--muted);
-  font-size: 13px;
-}
-.divider::before, .divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
+.feature-item{
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
 }
 
-/* Input */
-.input-box { margin-bottom: 14px; position: relative; }
-.input-box input {
-  width: 100%;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  background: rgba(15,23,42,0.7);
-  color: var(--text);
-  font-size: 15px;
-  font-family: 'DM Sans', sans-serif;
-  outline: none;
-  transition: all 0.22s;
-  backdrop-filter: blur(8px);
-}
-.input-box input:focus {
-  border-color: var(--cyan);
-  background: rgba(34,211,238,0.04);
-  box-shadow: 0 0 0 3px rgba(34,211,238,0.08);
-}
-.input-box input::placeholder { color: var(--muted); }
+.feature-icon{
+  width:42px;
+  height:42px;
 
-/* Primary btn */
-.primary-btn {
-  width: 100%;
-  padding: 15px;
-  border: none;
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--cyan) 0%, var(--blue) 100%);
-  color: white;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  margin-top: 6px;
-  transition: all 0.22s;
-  position: relative;
-  overflow: hidden;
-}
-.primary-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
-  opacity: 0;
-  transition: 0.2s;
-}
-.primary-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(34,211,238,0.22); }
-.primary-btn:hover::after { opacity: 1; }
+  flex-shrink:0;
 
-/* Terms */
-.auth-terms {
-  text-align: center;
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 20px;
-  line-height: 1.6;
-}
-.auth-terms a { color: var(--cyan); text-decoration: none; }
+  display:flex;
+  align-items:center;
+  justify-content:center;
 
-/* Animations */
-@keyframes fadeSlideUp {
-  from { opacity:0; transform:translateY(20px); }
-  to   { opacity:1; transform:translateY(0); }
+  border-radius:14px;
+
+  background:rgba(34,211,238,0.08);
+
+  border:1px solid rgba(34,211,238,0.15);
+
+  font-size:18px;
 }
 
-/* RESPONSIVE */
-@media(max-width:900px){
-  .container { flex-direction: column; }
-  .left { width:100%; padding:48px 32px; border-right:none; border-bottom:1px solid var(--border); }
-  .brand-logo { font-size:48px; }
-  .right { width:100%; padding:48px 24px; }
-  .stats-row { gap:24px; }
-  .features { display:none; }
+.feature-text{
+  color:var(--muted2);
+  font-size:15px;
+  line-height:1.5;
 }
-@media(max-width:480px){
-  .left { padding:36px 20px; }
-  .brand-logo { font-size:40px; }
-  .right { padding:36px 20px; }
+
+.feature-text b{
+  color:var(--text);
 }
+
+/* STATS */
+
+.stats-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:40px;
+
+  margin-top:56px;
+  padding-top:34px;
+
+  border-top:1px solid var(--border);
+
+  animation:fadeSlideUp .6s .4s ease both;
+}
+
+.stat-num{
+  font-family:'Syne',sans-serif;
+  font-size:30px;
+  font-weight:800;
+
+  color:var(--cyan);
+}
+
+.stat-label{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:3px;
+}
+
+/* =========================
+   RIGHT SIDE
+========================= */
+
+.right{
+  width:45%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  padding:50px 32px;
+}
+
+.auth-box{
+  width:100%;
+  max-width:430px;
+
+  padding:34px;
+
+  border:1px solid rgba(255,255,255,.06);
+
+  background:rgba(11,18,32,.72);
+
+  backdrop-filter:blur(18px);
+
+  border-radius:28px;
+
+  box-shadow:var(--shadow);
+
+  animation:fadeSlideUp .7s .15s ease both;
+}
+
+.auth-title{
+  font-family:'Syne',sans-serif;
+  font-size:32px;
+  font-weight:800;
+
+  margin-bottom:8px;
+}
+
+.auth-sub{
+  color:var(--muted);
+  font-size:14px;
+
+  line-height:1.6;
+
+  margin-bottom:30px;
+}
+
+/* TABS */
+
+.tabs{
+  display:flex;
+  gap:4px;
+
+  background:var(--bg3);
+
+  border:1px solid var(--border);
+
+  border-radius:16px;
+
+  padding:4px;
+
+  margin-bottom:26px;
+}
+
+.tab{
+  flex:1;
+
+  border:none;
+  outline:none;
+
+  padding:12px;
+
+  border-radius:12px;
+
+  background:none;
+
+  color:var(--muted);
+
+  font-size:14px;
+  font-weight:700;
+
+  cursor:pointer;
+
+  transition:.2s ease;
+
+  font-family:'DM Sans',sans-serif;
+}
+
+.tab.active{
+  background:var(--bg2);
+
+  color:var(--text);
+
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
+}
+
+/* PANELS */
+
+.panel{
+  display:none;
+}
+
+.panel.active{
+  display:block;
+}
+
+/* BUTTONS */
+
+.google-btn{
+  width:100%;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+
+  border:1px solid var(--border2);
+
+  background:rgba(255,255,255,.04);
+
+  backdrop-filter:blur(10px);
+
+  color:var(--text);
+
+  border-radius:16px;
+
+  padding:14px 16px;
+
+  font-size:15px;
+  font-weight:700;
+
+  cursor:pointer;
+
+  transition:.2s ease;
+
+  margin-bottom:20px;
+}
+
+.google-btn:hover{
+  transform:translateY(-2px);
+
+  background:rgba(255,255,255,.07);
+
+  border-color:#3b4d6c;
+}
+
+.primary-btn{
+  width:100%;
+
+  border:none;
+  outline:none;
+
+  border-radius:16px;
+
+  padding:15px;
+
+  margin-top:6px;
+
+  cursor:pointer;
+
+  position:relative;
+  overflow:hidden;
+
+  color:white;
+
+  font-size:15px;
+  font-weight:700;
+
+  background:linear-gradient(135deg,var(--cyan) 0%, var(--blue) 100%);
+
+  transition:.25s ease;
+}
+
+.primary-btn:hover{
+  transform:translateY(-2px);
+
+  box-shadow:0 10px 30px rgba(34,211,238,.25);
+}
+
+.primary-btn::after{
+  content:'';
+
+  position:absolute;
+  inset:0;
+
+  background:linear-gradient(
+    135deg,
+    rgba(255,255,255,.12) 0%,
+    transparent 60%
+  );
+
+  opacity:0;
+
+  transition:.25s ease;
+}
+
+.primary-btn:hover::after{
+  opacity:1;
+}
+
+/* DIVIDER */
+
+.divider{
+  display:flex;
+  align-items:center;
+  gap:12px;
+
+  color:var(--muted);
+
+  font-size:13px;
+
+  margin:0 0 20px;
+}
+
+.divider::before,
+.divider::after{
+  content:'';
+
+  flex:1;
+
+  height:1px;
+
+  background:var(--border);
+}
+
+/* INPUTS */
+
+.input-box{
+  margin-bottom:14px;
+}
+
+.input-box input{
+  width:100%;
+
+  padding:15px 16px;
+
+  border-radius:16px;
+
+  border:1px solid var(--border);
+
+  background:rgba(15,23,42,.7);
+
+  color:var(--text);
+
+  font-size:15px;
+
+  outline:none;
+
+  transition:.22s ease;
+
+  font-family:'DM Sans',sans-serif;
+}
+
+.input-box input::placeholder{
+  color:var(--muted);
+}
+
+.input-box input:focus{
+  border-color:var(--cyan);
+
+  background:rgba(34,211,238,.04);
+
+  box-shadow:0 0 0 3px rgba(34,211,238,.08);
+}
+
+/* TERMS */
+
+.auth-terms{
+  margin-top:20px;
+
+  text-align:center;
+
+  font-size:12px;
+  line-height:1.7;
+
+  color:var(--muted);
+}
+
+.auth-terms a{
+  color:var(--cyan);
+  text-decoration:none;
+}
+
+/* =========================
+   ANIMATION
+========================= */
+
+@keyframes fadeSlideUp{
+  from{
+    opacity:0;
+    transform:translateY(22px);
+  }
+
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width:1100px){
+
+  .left{
+    padding:60px 48px;
+  }
+
+  .right{
+    padding:40px 24px;
+  }
+
+  .brand-logo{
+    font-size:58px;
+  }
+
+}
+
+@media (max-width:900px){
+
+  .container{
+    flex-direction:column;
+  }
+
+  .left,
+  .right{
+    width:100%;
+  }
+
+  .left{
+    border-right:none;
+    border-bottom:1px solid var(--border);
+
+    padding:54px 26px 42px;
+  }
+
+  .right{
+    padding:34px 18px 50px;
+  }
+
+  .auth-box{
+    max-width:100%;
+  }
+
+  .brand-logo{
+    font-size:50px;
+  }
+
+  .brand-tagline{
+    font-size:17px;
+    margin-bottom:34px;
+  }
+
+  .stats-row{
+    gap:24px;
+    margin-top:40px;
+  }
+
+}
+
+@media (max-width:640px){
+
+  .features{
+    gap:14px;
+  }
+
+  .feature-item{
+    align-items:flex-start;
+  }
+
+  .feature-text{
+    font-size:14px;
+  }
+
+  .auth-box{
+    padding:24px 18px;
+    border-radius:22px;
+  }
+
+  .auth-title{
+    font-size:26px;
+  }
+
+  .brand-logo{
+    font-size:42px;
+  }
+
+  .brand-tag{
+    font-size:11px;
+    padding:6px 12px;
+  }
+
+}
+
+@media (max-width:480px){
+
+  .left{
+    padding:42px 18px 36px;
+  }
+
+  .right{
+    padding:24px 14px 40px;
+  }
+
+  .brand-logo{
+    font-size:36px;
+  }
+
+  .brand-tagline{
+    font-size:15px;
+    line-height:1.65;
+  }
+
+  .tabs{
+    margin-bottom:20px;
+  }
+
+  .tab{
+    font-size:13px;
+    padding:11px;
+  }
+
+  .google-btn,
+  .primary-btn,
+  .input-box input{
+    font-size:14px;
+  }
+
+  .stats-row{
+    justify-content:space-between;
+    gap:16px;
+  }
+
+  .stat-num{
+    font-size:24px;
+  }
+
+}
+
+/* FIXES */
+
+button{
+  -webkit-tap-highlight-color:transparent;
+}
+
+svg{
+  flex-shrink:0;
+}
+
+img{
+  max-width:100%;
+}
+
 </style>
 </head>
+
 <body>
 
 <div class="grid-lines"></div>
@@ -375,111 +775,259 @@ body {
 
 <div class="container">
 
-  <!-- LEFT BRAND -->
+  <!-- LEFT -->
+
   <div class="left">
+
     <div class="brand-tag">
       <span class="brand-tag-dot"></span>
-      Now in beta · Join infinites founders
+      Now in beta · Join infinite founders
     </div>
 
-    <div class="brand-logo">NexFounder</div>
+    <div class="brand-logo">
+      NexFounder
+    </div>
 
     <p class="brand-tagline">
-      The platform where <b>ambitious founders</b> meet, connect, and build
-      the next generation of startups — together.
+      The platform where <b>ambitious founders</b> meet, connect, and build the next generation of startups — together.
     </p>
 
     <div class="features">
+
       <div class="feature-item">
         <div class="feature-icon">🤝</div>
-        <div class="feature-text"><b>Smart Matching</b> · Find co-founders by skills & vision</div>
+
+        <div class="feature-text">
+          <b>Smart Matching</b> · Find co-founders by skills & vision
+        </div>
       </div>
+
       <div class="feature-item">
         <div class="feature-icon">⚡</div>
-        <div class="feature-text"><b>Live Feed</b> · Share milestones, get feedback instantly</div>
+
+        <div class="feature-text">
+          <b>Live Feed</b> · Share milestones, get feedback instantly
+        </div>
       </div>
+
       <div class="feature-item">
         <div class="feature-icon">💬</div>
-        <div class="feature-text"><b>Direct Messages</b> · Pitch ideas in private conversations</div>
+
+        <div class="feature-text">
+          <b>Direct Messages</b> · Pitch ideas in private conversations
+        </div>
       </div>
+
       <div class="feature-item">
         <div class="feature-icon">🚀</div>
-        <div class="feature-text"><b>Startup Showcase</b> · Launch your idea to the community</div>
+
+        <div class="feature-text">
+          <b>Startup Showcase</b> · Launch your idea to the community
+        </div>
       </div>
+
     </div>
 
     <div class="stats-row">
+
       <div class="stat-item">
         <div class="stat-num">∞</div>
         <div class="stat-label">Founders</div>
       </div>
+
       <div class="stat-item">
         <div class="stat-num">∞</div>
         <div class="stat-label">Updates</div>
       </div>
+
       <div class="stat-item">
         <div class="stat-num">24/7</div>
         <div class="stat-label">Online</div>
       </div>
+
     </div>
+
   </div>
 
-  <!-- RIGHT AUTH -->
+  <!-- RIGHT -->
+
   <div class="right">
+
     <div class="auth-box">
-      <div class="auth-title">Welcome back 👋</div>
-      <div class="auth-sub">Sign in to continue building your future</div>
+
+      <div class="auth-title">
+        Welcome back 👋
+      </div>
+
+      <div class="auth-sub">
+        Sign in to continue building your future
+      </div>
 
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('login')">Login</button>
-        <button class="tab" onclick="switchTab('signup')">Sign Up</button>
+
+        <button
+          class="tab active"
+          data-tab="login"
+          type="button"
+        >
+          Login
+        </button>
+
+        <button
+          class="tab"
+          data-tab="signup"
+          type="button"
+        >
+          Sign Up
+        </button>
+
       </div>
 
       <!-- LOGIN -->
+
       <div class="panel active" id="loginPanel">
+
         <button class="google-btn" onclick="googleLogin()">
-          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/><path fill="#FBBC05" d="M10.6 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.5 14.7 48 24 48z"/></svg>
+
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/>
+            <path fill="#FBBC05" d="M10.6 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6z"/>
+            <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.5 14.7 48 24 48z"/>
+          </svg>
+
           Continue with Google
+
         </button>
-        <div class="divider">or continue with email</div>
-        <div class="input-box"><input type="email" id="emailInput" placeholder="Email address"></div>
-        <div class="input-box"><input type="password" id="passwordInput" placeholder="Password"></div>
-        <button class="primary-btn" onclick="emailLogin()">Sign In →</button>
+
+        <div class="divider">
+          or continue with email
+        </div>
+
+        <div class="input-box">
+          <input type="email" id="emailInput" placeholder="Email address">
+        </div>
+
+        <div class="input-box">
+          <input type="password" id="passwordInput" placeholder="Password">
+        </div>
+
+        <button class="primary-btn" onclick="emailLogin()">
+          Sign In →
+        </button>
+
       </div>
 
       <!-- SIGNUP -->
+
       <div class="panel" id="signupPanel">
+
         <button class="google-btn" onclick="googleLogin()">
-          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/><path fill="#FBBC05" d="M10.6 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.5 14.7 48 24 48z"/></svg>
+
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/>
+            <path fill="#FBBC05" d="M10.6 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6z"/>
+            <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.5 14.7 48 24 48z"/>
+          </svg>
+
           Sign up with Google
+
         </button>
-        <div class="divider">or sign up with email</div>
-        <div class="input-box"><input type="text" id="signupName" placeholder="Full Name"></div>
-        <div class="input-box"><input type="email" id="signupEmail" placeholder="Email address"></div>
-        <div class="input-box"><input type="password" id="signupPassword" placeholder="Password (min 6 chars)"></div>
-        <button class="primary-btn" onclick="signup()">Create Account →</button>
+
+        <div class="divider">
+          or sign up with email
+        </div>
+
+        <div class="input-box">
+          <input type="text" id="signupName" placeholder="Full Name">
+        </div>
+
+        <div class="input-box">
+          <input type="email" id="signupEmail" placeholder="Email address">
+        </div>
+
+        <div class="input-box">
+          <input type="password" id="signupPassword" placeholder="Password (min 6 chars)">
+        </div>
+
+        <button class="primary-btn" onclick="signup()">
+          Create Account →
+        </button>
+
       </div>
 
       <div class="auth-terms">
-        By continuing, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
+        By continuing, you agree to our
+        <a href="#">Terms</a>
+        and
+        <a href="#">Privacy Policy</a>
       </div>
+
     </div>
+
   </div>
 
 </div>
 
 <script>
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='signup'));
+
+const tabs = document.querySelectorAll('.tab');
+
+tabs.forEach(tab => {
+
+  tab.addEventListener('click', () => {
+
+    switchTab(tab.dataset.tab);
+
   });
-  document.getElementById('loginPanel').classList.toggle('active', tab==='login');
-  document.getElementById('signupPanel').classList.toggle('active', tab==='signup');
-  document.querySelector('.auth-title').textContent = tab==='login' ? 'Welcome back 👋' : 'Join NexFounder 🚀';
-  document.querySelector('.auth-sub').textContent = tab==='login' ? 'Sign in to continue building your future' : 'Create your account and find your co-founder';
+
+});
+
+function switchTab(tab){
+
+  tabs.forEach(btn => {
+
+    btn.classList.toggle(
+      'active',
+      btn.dataset.tab === tab
+    );
+
+  });
+
+  document
+    .getElementById('loginPanel')
+    .classList.toggle('active', tab === 'login');
+
+  document
+    .getElementById('signupPanel')
+    .classList.toggle('active', tab === 'signup');
+
+  const title = document.querySelector('.auth-title');
+  const sub = document.querySelector('.auth-sub');
+
+  if(tab === 'login'){
+
+    title.textContent = 'Welcome back 👋';
+
+    sub.textContent =
+      'Sign in to continue building your future';
+
+  } else {
+
+    title.textContent = 'Join NexFounder 🚀';
+
+    sub.textContent =
+      'Create your account and find your co-founder';
+
+  }
+
 }
+
 </script>
+
 <script type="module" src="app.js"></script>
 <script type="module" src="signup.js"></script>
+
 </body>
 </html>
