@@ -34,29 +34,57 @@ body{ background:#0b1220; color:white; font-family:system-ui, Arial; }
 .username{ color:#94a3b8; margin-top:4px; font-size:16px; }
 .email{ color:#64748b; font-size:14px; margin-top:6px; }
 
-.btn-row{ display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; }
-.editbtn, .connectbtn, .messagebtn, .followbtn{
-  padding:12px 18px; border:none; border-radius:12px; cursor:pointer; font-weight:700; transition:0.2s; font-size:14px;
-}
-.editbtn{ background:#2563eb; color:white; }
-.editbtn:hover{ background:#3b82f6; }
-.followbtn{ background:#22d3ee; color:#0b1220; }
-.followbtn:hover{ opacity:0.9; }
-.followbtn.following{ background:transparent; border:1px solid #334155; color:#94a3b8; }
+.btn-row{ display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; align-items:center; }
 
+.editbtn{
+  padding:12px 20px; border:none; border-radius:12px; cursor:pointer; font-weight:700; transition:0.2s; font-size:14px;
+  background:#2563eb; color:white; display:inline-flex; align-items:center; gap:7px;
+}
+.editbtn:hover{ background:#3b82f6; }
+
+/* ── FOLLOW BUTTON ── */
+.followbtn{
+  padding:12px 22px; border:none; border-radius:12px; cursor:pointer; font-weight:700;
+  font-size:14px; display:inline-flex; align-items:center; gap:7px; transition:all 0.2s;
+  background:linear-gradient(135deg,#22d3ee 0%,#2563eb 100%); color:white;
+}
+.followbtn:hover{ opacity:0.88; transform:translateY(-1px); }
+.followbtn:active{ transform:translateY(0); }
+.followbtn:disabled{ opacity:0.55; cursor:not-allowed; transform:none; }
+.followbtn.following{
+  background:transparent; border:1.5px solid #334155; color:#94a3b8;
+  transform:none;
+}
+.followbtn.following:hover{
+  border-color:#ef4444; color:#ef4444;
+  background:rgba(239,68,68,0.07); opacity:1; transform:none;
+}
+
+/* ── CONNECT BUTTON ── */
+.connectbtn{
+  padding:12px 20px; border:none; border-radius:12px; cursor:pointer; font-weight:700;
+  transition:0.2s; font-size:14px; display:inline-flex; align-items:center; gap:7px;
+}
 .connectbtn.default{ background:#22d3ee; color:#0b1220; }
 .connectbtn.default:hover{ background:#06b6d4; }
 .connectbtn.pending{ background:transparent; border:1px solid #334155; color:#64748b; }
 .connectbtn.connected{ background:transparent; border:1px solid #22d3ee; color:#22d3ee; }
 .connectbtn.accept{ background:#10b981; color:white; }
+.connectbtn:disabled{ opacity:0.55; cursor:not-allowed; }
 
-.messagebtn{ background:#1e293b; color:white; border:1px solid #334155; }
+/* ── MESSAGE BUTTON ── */
+.messagebtn{
+  padding:12px 20px; border-radius:12px; cursor:pointer; font-weight:700; font-size:14px;
+  background:#1e293b; color:white; border:1px solid #334155; transition:0.2s;
+  display:inline-flex; align-items:center; gap:7px;
+}
 .messagebtn:hover{ background:#2d3f55; }
 
 .bio{ margin-top:22px; color:#cbd5e1; line-height:1.7; font-size:15px; }
 
 .stats{ display:flex; gap:16px; margin-top:28px; flex-wrap:wrap; }
-.statbox{ background:#0b1220; border:1px solid #1e293b; padding:16px 24px; border-radius:18px; min-width:130px; }
+.statbox{ background:#0b1220; border:1px solid #1e293b; padding:16px 24px; border-radius:18px; min-width:130px; cursor:default; transition:0.2s; }
+.statbox:hover{ border-color:#334155; }
 .statnumber{ font-size:22px; font-weight:800; }
 .statlabel{ color:#94a3b8; font-size:13px; margin-top:3px; }
 
@@ -67,11 +95,15 @@ body{ background:#0b1220; color:white; font-family:system-ui, Arial; }
 .modal-overlay.open{ display:flex; }
 .modal{ background:#0f172a; padding:28px; border-radius:22px; width:100%; max-width:480px; border:1px solid #1e293b; box-shadow:0 15px 45px rgba(0,0,0,0.45); }
 .field{ margin-bottom:14px; }
-.field input, .field textarea{ width:100%; padding:13px 14px; border-radius:14px; border:1px solid #1e293b; background:#0b1220; color:white; outline:none; resize:none; font-family:inherit; }
+.field input, .field textarea{ width:100%; padding:13px 14px; border-radius:14px; border:1px solid #1e293b; background:#0b1220; color:white; outline:none; resize:none; font-family:inherit; font-size:15px; transition:0.2s; }
+.field input:focus, .field textarea:focus{ border-color:#22d3ee; }
 .field textarea{ min-height:110px; }
 .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
-.savebtn{ background:#22d3ee; color:#0b1220; border:none; padding:12px 18px; border-radius:12px; cursor:pointer; font-weight:700; }
-.cancelbtn{ background:transparent; border:1px solid #1e293b; color:#94a3b8; padding:12px 18px; border-radius:12px; cursor:pointer; }
+.savebtn{ background:#22d3ee; color:#0b1220; border:none; padding:12px 20px; border-radius:12px; cursor:pointer; font-weight:700; transition:0.2s; }
+.savebtn:hover{ background:#06b6d4; }
+.savebtn:disabled{ opacity:0.55; cursor:not-allowed; }
+.cancelbtn{ background:transparent; border:1px solid #1e293b; color:#94a3b8; padding:12px 20px; border-radius:12px; cursor:pointer; transition:0.2s; }
+.cancelbtn:hover{ border-color:#334155; color:white; }
 
 @media(max-width:700px){
   .container{ padding:12px; }
@@ -80,6 +112,8 @@ body{ background:#0b1220; color:white; font-family:system-ui, Arial; }
   .profilecontent{ padding:18px 22px 26px; }
   .name{ font-size:28px; }
   .stats{ flex-wrap:wrap; }
+  .btn-row{ gap:8px; }
+  .followbtn, .connectbtn, .messagebtn, .editbtn{ padding:10px 16px; font-size:13px; }
 }
 </style>
 </head>
@@ -100,7 +134,7 @@ body{ background:#0b1220; color:white; font-family:system-ui, Arial; }
   <div class="profilecard">
 
     <div class="banner" id="banner">
-      <button class="banner-edit-btn" id="bannerEditBtn" style="display:none">Change Banner</button>
+      <button class="banner-edit-btn" id="bannerEditBtn" style="display:none">✎ Change Banner</button>
     </div>
     <input type="file" id="bannerInput" accept="image/*">
 
@@ -116,8 +150,9 @@ body{ background:#0b1220; color:white; font-family:system-ui, Arial; }
 
       <div class="btn-row">
         <!-- Own profile -->
-        <button class="editbtn" id="openEditBtn" style="display:none">Edit Profile</button>
-        <!-- Other profiles -->
+        <button class="editbtn" id="openEditBtn" style="display:none">✎ Edit Profile</button>
+        <!-- Other profiles only -->
+        <button class="followbtn" id="followBtn" style="display:none">＋ Follow</button>
         <button class="connectbtn default" id="connectBtn" style="display:none">Connect</button>
         <button class="messagebtn" id="messageBtn" style="display:none">💬 Message</button>
       </div>
