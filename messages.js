@@ -1,264 +1,376 @@
 import { auth, db } from "./firebase.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
-  collection, doc, getDoc, addDoc, setDoc,
-  query, orderBy, onSnapshot, where,
-  serverTimestamp
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// ─────────────────────────────
-// GLOBAL STATE
-// ─────────────────────────────
+/* STATE */
 let currentUser = null;
-let currentUserData = null;
-let activeConvId = null;
-let unsubChat = null;
+let conversations = [];
+let allUsers = [];
 
-// ─────────────────────────────
-// DOM ELEMENTS
-// ─────────────────────────────
-const convList = document.getElementById("convList");
-const chatPanel = document.getElementById("chatPanel");
-const convSearch = document.getElementById("convSearch");
+/* DOM */
+const convList =
+  document.getElementById("convList");
 
-const notifBadge = document.getElementById("notifBadge");
-const msgBadge = document.getElementById("msgBadge");
+const searchInput =
+  document.getElementById("searchInput");
 
-const newMsgBtn = document.getElementById("newMsgBtn");
-const newMsgModal = document.getElementById("newMsgModal");
-const modalClose = document.getElementById("modalClose");
-const modalSearch = document.getElementById("modalSearch");
-const modalUserList = document.getElementById("modalUserList");
+const modal =
+  document.getElementById("modal");
 
-// ─────────────────────────────
-// AUTH
-// ─────────────────────────────
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
+const newMsgBtn =
+  document.getElementById("newMsgBtn");
+
+const closeModal =
+  document.getElementById("closeModal");
+
+const modalSearch =
+  document.getElementById("modalSearch");
+
+const modalList =
+  document.getElementById("modalList");
+
+/* AUTH */
+onAuthStateChanged(auth, async(user)=>{
+
+  if(!user){
+
     location.href = "index.html";
     return;
+
   }
 
   currentUser = user;
 
-  const snap = await getDoc(doc(db, "users", user.uid));
-  if (snap.exists()) {
-    currentUserData = snap.data();
-    setNavAvatar();
-  }
-
   loadConversations();
-  watchBadges();
+  loadUsers();
 
-  const params = new URLSearchParams(location.search);
-  const uid = params.get("uid");
-  if (uid) openOrCreateConversation(uid);
 });
 
-// ─────────────────────────────
-// NAV UI
-// ─────────────────────────────
-function setNavAvatar() {
-  const el = document.getElementById("navAvatar");
-  document.getElementById("navName").textContent =
-    currentUserData.displayName || "You";
+/* HELPERS */
+function formatTime(ts){
 
-  if (currentUserData.photoURL) {
-    el.innerHTML = `<img src="${currentUserData.photoURL}">`;
-  } else {
-    el.textContent = currentUserData.initials || "?";
-  }
+  if(!ts?.toDate) return "";
+
+  return ts.toDate().toLocaleTimeString([],{
+    hour:"2-digit",
+    minute:"2-digit"
+  });
+
 }
 
-// ─────────────────────────────
-// CONVERSATION ID
-// ─────────────────────────────
-function convId(uid1, uid2) {
-  return [uid1, uid2].sort().join("_");
+function escapeHTML(str){
+
+  if(!str) return "";
+
+  return str
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+
 }
 
-// ─────────────────────────────
-// LOAD CONVERSATIONS
-// ─────────────────────────────
-function loadConversations(filter = "") {
+/* LOAD CONVERSATIONS */
+function loadConversations(filter=""){
+
   const q = query(
-    collection(db, "conversations"),
-    where("participants", "array-contains", currentUser.uid),
-    orderBy("lastMessageAt", "desc")
+    collection(db,"conversations"),
+    where(
+      "participants",
+      "array-contains",
+      currentUser.uid
+    ),
+    orderBy("lastMessageAt","desc")
   );
 
-  onSnapshot(q, async (snap) => {
+  onSnapshot(q, async(snap)=>{
+
     convList.innerHTML = "";
 
-    const list = [];
-    snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+    conversations = [];
 
-    for (const conv of list) {
-      const otherId = conv.participants.find(p => p !== currentUser.uid);
-      if (!otherId) continue;
+    for(const d of snap.docs){
 
-      const otherSnap = await getDoc(doc(db, "users", otherId));
-      const other = otherSnap.exists()
+      const conv = {
+        id:d.id,
+        ...d.data()
+      };
+
+      const otherId =
+        conv.participants.find(
+          p => p !== currentUser.uid
+        );
+
+      if(!otherId) continue;
+
+      const otherSnap =
+        await getDoc(doc(db,"users",otherId));
+
+      const other =
+        otherSnap.exists()
         ? otherSnap.data()
-        : { displayName: "User", initials: "?" };
+        : {
+          displayName:"User",
+          initials:"?"
+        };
 
-      if (
+      if(
         filter &&
-        !other.displayName?.toLowerCase().includes(filter.toLowerCase())
-      ) continue;
+        !other.displayName
+        ?.toLowerCase()
+        .includes(filter.toLowerCase())
+      ){
+        continue;
+      }
 
-      const el = document.createElement("div");
-      el.className = "conv-item";
-      el.onclick = () => openChat(conv.id, otherId, other);
+      conversations.push({
+        conv,
+        other,
+        otherId
+      });
 
-      el.innerHTML = `
-        <div>
-          <div class="conv-name">${other.displayName || "User"}</div>
-          <div class="conv-preview">${conv.lastMessage || ""}</div>
-        </div>
-      `;
-
-      convList.appendChild(el);
     }
-  });
-}
 
-// ─────────────────────────────
-// OPEN CHAT
-// ─────────────────────────────
-async function openChat(cid, otherId, other) {
-  if (unsubChat) unsubChat();
+    renderConversations();
 
-  activeConvId = cid;
-
-  chatPanel.innerHTML = `
-    <div class="chat-header">
-      <div class="chat-header-name">${other.displayName || "User"}</div>
-    </div>
-
-    <div id="messagesArea" class="messages-area"></div>
-
-    <div class="send-area">
-      <input id="msgInput" type="text" placeholder="Message...">
-      <button id="sendBtn">Send</button>
-    </div>
-  `;
-
-  const messagesArea = document.getElementById("messagesArea");
-  const msgInput = document.getElementById("msgInput");
-  const sendBtn = document.getElementById("sendBtn");
-
-  sendBtn.onclick = () => sendMessage(cid, otherId, msgInput);
-
-  const q = query(
-    collection(db, "messages"),
-    where("convId", "==", cid),
-    orderBy("createdAt", "asc")
-  );
-
-  unsubChat = onSnapshot(q, (snap) => {
-    messagesArea.innerHTML = "";
-
-    snap.forEach(d => {
-      const m = d.data();
-
-      const div = document.createElement("div");
-      div.className =
-        m.fromUid === currentUser.uid ? "msg-bubble msg-mine" : "msg-bubble msg-other";
-
-      div.innerHTML = `
-        ${m.text}
-        <div class="msg-time"></div>
-      `;
-
-      messagesArea.appendChild(div);
-    });
-
-    messagesArea.scrollTop = messagesArea.scrollHeight;
-  });
-}
-
-// ─────────────────────────────
-// SEND MESSAGE
-// ─────────────────────────────
-async function sendMessage(cid, toUid, input) {
-  const text = input.value.trim();
-  if (!text) return;
-
-  input.value = "";
-
-  await addDoc(collection(db, "messages"), {
-    convId: cid,
-    fromUid: currentUser.uid,
-    toUid,
-    text,
-    read: false,
-    createdAt: serverTimestamp()
   });
 
-  await setDoc(doc(db, "conversations", cid), {
-    participants: [currentUser.uid, toUid],
-    lastMessage: text,
-    lastMessageAt: serverTimestamp(),
-    unreadBy: [toUid]
-  }, { merge: true });
 }
 
-// ─────────────────────────────
-// OPEN OR CREATE CHAT
-// ─────────────────────────────
-async function openOrCreateConversation(otherId) {
-  const cid = convId(currentUser.uid, otherId);
+/* RENDER CONVERSATIONS */
+function renderConversations(){
 
-  const otherSnap = await getDoc(doc(db, "users", otherId));
-  const other = otherSnap.exists()
-    ? otherSnap.data()
-    : { displayName: "User", initials: "?" };
+  if(conversations.length===0){
 
-  openChat(cid, otherId, other);
+    convList.innerHTML = `
+
+      <div class="empty">
+
+        <div>💬</div>
+
+        <p>No conversations found</p>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+  conversations.forEach(item=>{
+
+    const {
+      conv,
+      other,
+      otherId
+    } = item;
+
+    const unread =
+      conv.unreadBy?.includes(
+        currentUser.uid
+      );
+
+    const a =
+      document.createElement("a");
+
+    a.className = "conv-item";
+
+    a.href =
+      `chat.html?uid=${otherId}`;
+
+    a.innerHTML = `
+
+      <div class="conv-avatar">
+
+        ${
+          other.photoURL
+          ? `<img src="${other.photoURL}">`
+          : (other.initials || "?")
+        }
+
+      </div>
+
+      <div class="conv-content">
+
+        <div class="conv-name">
+          ${other.displayName || "User"}
+        </div>
+
+        <div class="conv-preview">
+          ${escapeHTML(conv.lastMessage || "")}
+        </div>
+
+      </div>
+
+      <div class="conv-right">
+
+        <div class="conv-time">
+          ${formatTime(conv.lastMessageAt)}
+        </div>
+
+        ${
+          unread
+          ? `<div class="unread-dot"></div>`
+          : ""
+        }
+
+      </div>
+
+    `;
+
+    convList.appendChild(a);
+
+  });
+
 }
 
-// ─────────────────────────────
-// SEARCH CONVERSATIONS
-// ─────────────────────────────
-convSearch.addEventListener("input", (e) => {
+/* SEARCH CONVERSATIONS */
+searchInput.addEventListener("input",(e)=>{
+
   loadConversations(e.target.value);
+
 });
 
-// ─────────────────────────────
-// BADGES (FIXED - replaces missing watchBadges)
-// ─────────────────────────────
-function watchBadges() {
-  const q = query(
-    collection(db, "conversations"),
-    where("participants", "array-contains", currentUser.uid)
-  );
+/* LOAD USERS */
+async function loadUsers(filter=""){
 
-  onSnapshot(q, (snap) => {
-    let unread = 0;
+  const snap =
+    await getDocs(collection(db,"users"));
 
-    snap.forEach(d => {
-      const data = d.data();
-      if (data.unreadBy?.includes(currentUser.uid)) {
-        unread++;
-      }
+  modalList.innerHTML = "";
+
+  allUsers = [];
+
+  snap.forEach(d=>{
+
+    if(d.id===currentUser.uid) return;
+
+    const u = d.data();
+
+    if(
+      filter &&
+      !u.displayName
+      ?.toLowerCase()
+      .includes(filter.toLowerCase())
+    ){
+      return;
+    }
+
+    allUsers.push({
+      id:d.id,
+      ...u
     });
 
-    if (msgBadge) {
-      msgBadge.textContent = unread > 0 ? unread : "";
-      msgBadge.classList.toggle("show", unread > 0);
-    }
   });
+
+  renderUsers();
+
 }
 
-// ─────────────────────────────
-// MODAL (basic working)
-// ─────────────────────────────
-newMsgBtn.onclick = () => {
-  newMsgModal.classList.add("open");
+/* RENDER USERS */
+function renderUsers(){
+
+  if(allUsers.length===0){
+
+    modalList.innerHTML = `
+      <div style="
+      padding:20px;
+      text-align:center;
+      color:#64748b">
+        No users found
+      </div>
+    `;
+
+    return;
+
+  }
+
+  allUsers.forEach(u=>{
+
+    const div =
+      document.createElement("div");
+
+    div.className =
+      "modal-user";
+
+    div.onclick = ()=>{
+
+      location.href =
+        `chat.html?uid=${u.id}`;
+
+    };
+
+    div.innerHTML = `
+
+      <div class="modal-avatar">
+
+        ${
+          u.photoURL
+          ? `<img src="${u.photoURL}">`
+          : (u.initials || "?")
+        }
+
+      </div>
+
+      <div>
+
+        <div class="modal-name">
+          ${u.displayName || "User"}
+        </div>
+
+        <div class="modal-username">
+          @${u.username || "user"}
+        </div>
+
+      </div>
+
+    `;
+
+    modalList.appendChild(div);
+
+  });
+
+}
+
+/* SEARCH USERS */
+modalSearch.addEventListener("input",(e)=>{
+
+  loadUsers(e.target.value);
+
+});
+
+/* MODAL */
+newMsgBtn.onclick = ()=>{
+
+  modal.classList.add("open");
+
 };
 
-modalClose.onclick = () => {
-  newMsgModal.classList.remove("open");
+closeModal.onclick = ()=>{
+
+  modal.classList.remove("open");
+
+};
+
+window.onclick = (e)=>{
+
+  if(e.target===modal){
+
+    modal.classList.remove("open");
+
+  }
+
 };
