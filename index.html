@@ -1,92 +1,435 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> <meta name="google-site-verification" content="NyJeodQ9fzjEKm4FJRfgzMddf4OwBc1wHxlO-Lqj5iY" />
+<head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NexFounder – Find your co-founder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-* { margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif; }
-body { background:black; color:white; }
-.container { display:flex; min-height:100vh; }
+:root {
+  --cyan:    #22d3ee;
+  --cyan-d:  #06b6d4;
+  --blue:    #2563eb;
+  --bg:      #020817;
+  --bg2:     #0b1220;
+  --bg3:     #0f172a;
+  --border:  #1e293b;
+  --border2: #2a3a54;
+  --text:    #f1f5f9;
+  --muted:   #64748b;
+  --muted2:  #94a3b8;
+}
 
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── ANIMATED BACKGROUND ── */
+.bg-mesh {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.bg-mesh::before {
+  content: '';
+  position: absolute;
+  width: 700px; height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34,211,238,0.07) 0%, transparent 70%);
+  top: -200px; left: -150px;
+  animation: drift1 18s ease-in-out infinite alternate;
+}
+.bg-mesh::after {
+  content: '';
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
+  bottom: -150px; right: -100px;
+  animation: drift2 22s ease-in-out infinite alternate;
+}
+@keyframes drift1 { from { transform: translate(0,0) scale(1); } to { transform: translate(80px,60px) scale(1.1); } }
+@keyframes drift2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-60px,-80px) scale(1.08); } }
+
+/* ── GRID LINES ── */
+.grid-lines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ── LAYOUT ── */
+.container {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── LEFT BRAND PANEL ── */
 .left {
-  width:50%; background:#0a0a0a;
-  display:flex; justify-content:center; align-items:center;
-  border-right:1px solid #2f3336;
+  width: 55%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 80px 72px;
+  border-right: 1px solid var(--border);
+  position: relative;
 }
-.brand-box { text-align:center; }
-.brand-box h1 { font-size:52px; color:#22d3ee; margin-bottom:16px; }
-.brand-box p { color:#71767b; font-size:18px; line-height:1.6; max-width:320px; }
 
+.brand-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(34,211,238,0.08);
+  border: 1px solid rgba(34,211,238,0.18);
+  border-radius: 100px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cyan);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 28px;
+  animation: fadeSlideUp 0.6s ease both;
+}
+.brand-tag-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  animation: pulse-dot 2s ease infinite;
+}
+@keyframes pulse-dot {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.5; transform:scale(0.7); }
+}
+
+.brand-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 68px;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, #fff 0%, var(--cyan) 60%, var(--blue) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 24px;
+  animation: fadeSlideUp 0.6s 0.1s ease both;
+}
+
+.brand-tagline {
+  font-size: 20px;
+  color: var(--muted2);
+  line-height: 1.65;
+  max-width: 400px;
+  margin-bottom: 48px;
+  font-weight: 400;
+  animation: fadeSlideUp 0.6s 0.2s ease both;
+}
+.brand-tagline b { color: var(--text); font-weight: 600; }
+
+/* Feature pills */
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeSlideUp 0.6s 0.3s ease both;
+}
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.feature-icon {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: rgba(34,211,238,0.08);
+  border: 1px solid rgba(34,211,238,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.feature-text { color: var(--muted2); font-size: 15px; }
+.feature-text b { color: var(--text); font-weight: 600; }
+
+/* Stats row */
+.stats-row {
+  display: flex;
+  gap: 40px;
+  margin-top: 56px;
+  padding-top: 40px;
+  border-top: 1px solid var(--border);
+  animation: fadeSlideUp 0.6s 0.4s ease both;
+}
+.stat-item {}
+.stat-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--cyan);
+}
+.stat-label { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* ── RIGHT AUTH PANEL ── */
 .right {
-  width:50%; display:flex; justify-content:center;
-  align-items:center; padding:40px;
+  width: 45%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 56px;
 }
-.auth-box { width:100%; max-width:400px; }
-.auth-box h2 { font-size:28px; margin-bottom:24px; }
 
-.tabs { display:flex; margin-bottom:28px; border-bottom:1px solid #2f3336; }
-.tab {
-  flex:1; padding:12px; background:none; border:none;
-  color:#71767b; font-size:16px; cursor:pointer;
-  border-bottom:2px solid transparent; transition:0.2s;
+.auth-box {
+  width: 100%;
+  max-width: 400px;
+  animation: fadeSlideUp 0.7s 0.15s ease both;
 }
-.tab.active { color:white; border-bottom:2px solid #22d3ee; font-weight:700; }
+
+.auth-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 30px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.auth-sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 4px;
+  margin-bottom: 28px;
+  gap: 4px;
+}
+.tab {
+  flex: 1;
+  padding: 11px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: all 0.22s;
+}
+.tab.active {
+  background: var(--bg2);
+  color: var(--text);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
 
 .panel { display:none; }
 .panel.active { display:block; }
 
-.input-box { margin-bottom:16px; }
-.input-box input {
-  width:100%; padding:14px; border:1px solid #2f3336;
-  border-radius:12px; background:#16181c; color:white;
-  font-size:15px; outline:none; transition:border-color 0.2s;
-}
-.input-box input:focus { border-color:#22d3ee; }
-
+/* Google btn */
 .google-btn {
-  width:100%; padding:14px; border:none; border-radius:30px;
-  background:white; color:black; font-size:15px; cursor:pointer;
-  font-weight:700; margin-bottom:16px;
-  display:flex; align-items:center; justify-content:center;
-  gap:10px; transition:opacity 0.2s;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
 }
-.google-btn:hover { opacity:0.9; }
+.google-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--border2);
+  transform: translateY(-1px);
+}
 
+/* Divider */
 .divider {
-  display:flex; align-items:center; gap:12px;
-  margin:16px 0; color:#71767b; font-size:13px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 20px;
+  color: var(--muted);
+  font-size: 13px;
 }
 .divider::before, .divider::after {
-  content:''; flex:1; height:1px; background:#2f3336;
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
 
+/* Input */
+.input-box { margin-bottom: 14px; position: relative; }
+.input-box input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(15,23,42,0.7);
+  color: var(--text);
+  font-size: 15px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: all 0.22s;
+  backdrop-filter: blur(8px);
+}
+.input-box input:focus {
+  border-color: var(--cyan);
+  background: rgba(34,211,238,0.04);
+  box-shadow: 0 0 0 3px rgba(34,211,238,0.08);
+}
+.input-box input::placeholder { color: var(--muted); }
+
+/* Primary btn */
 .primary-btn {
-  width:100%; padding:14px; border:none; border-radius:30px;
-  background:#22d3ee; color:#0a0a0a; font-size:15px;
-  cursor:pointer; font-weight:700; margin-top:8px;
-  transition:background 0.2s;
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--blue) 100%);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: all 0.22s;
+  position: relative;
+  overflow: hidden;
 }
-.primary-btn:hover { background:#06b6d4; }
+.primary-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+  opacity: 0;
+  transition: 0.2s;
+}
+.primary-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(34,211,238,0.22); }
+.primary-btn:hover::after { opacity: 1; }
 
-@media(max-width:700px){
-  .container { flex-direction:column; }
-  .left { width:100%; padding:40px 20px; border-right:none; border-bottom:1px solid #2f3336; }
-  .right { width:100%; }
-  .brand-box h1 { font-size:36px; }
+/* Terms */
+.auth-terms {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 20px;
+  line-height: 1.6;
+}
+.auth-terms a { color: var(--cyan); text-decoration: none; }
+
+/* Animations */
+@keyframes fadeSlideUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .container { flex-direction: column; }
+  .left { width:100%; padding:48px 32px; border-right:none; border-bottom:1px solid var(--border); }
+  .brand-logo { font-size:48px; }
+  .right { width:100%; padding:48px 24px; }
+  .stats-row { gap:24px; }
+  .features { display:none; }
+}
+@media(max-width:480px){
+  .left { padding:36px 20px; }
+  .brand-logo { font-size:40px; }
+  .right { padding:36px 20px; }
 }
 </style>
 </head>
 <body>
+
+<div class="grid-lines"></div>
+<div class="bg-mesh"></div>
+
 <div class="container">
+
+  <!-- LEFT BRAND -->
   <div class="left">
-    <div class="brand-box">
-      <h1>NexFounder</h1>
-      <p>Find founders, build startups, and launch together.</p>
+    <div class="brand-tag">
+      <span class="brand-tag-dot"></span>
+      Now in beta · Join 12,000+ founders
+    </div>
+
+    <div class="brand-logo">NexFounder</div>
+
+    <p class="brand-tagline">
+      The platform where <b>ambitious founders</b> meet, connect, and build
+      the next generation of startups — together.
+    </p>
+
+    <div class="features">
+      <div class="feature-item">
+        <div class="feature-icon">🤝</div>
+        <div class="feature-text"><b>Smart Matching</b> · Find co-founders by skills & vision</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-text"><b>Live Feed</b> · Share milestones, get feedback instantly</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">💬</div>
+        <div class="feature-text"><b>Direct Messages</b> · Pitch ideas in private conversations</div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🚀</div>
+        <div class="feature-text"><b>Startup Showcase</b> · Launch your idea to the community</div>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-num">12K+</div>
+        <div class="stat-label">Founders</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">3.4K</div>
+        <div class="stat-label">Startups Built</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">$2M+</div>
+        <div class="stat-label">Funding Raised</div>
+      </div>
     </div>
   </div>
+
+  <!-- RIGHT AUTH -->
   <div class="right">
     <div class="auth-box">
+      <div class="auth-title">Welcome back 👋</div>
+      <div class="auth-sub">Sign in to continue building your future</div>
+
       <div class="tabs">
         <button class="tab active" onclick="switchTab('login')">Login</button>
         <button class="tab" onclick="switchTab('signup')">Sign Up</button>
@@ -96,12 +439,12 @@ body { background:black; color:white; }
       <div class="panel active" id="loginPanel">
         <button class="google-btn" onclick="googleLogin()">
           <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/><path fill="#FBBC05" d="M10.6 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.5 14.7 48 24 48z"/></svg>
-          Sign in with Google
+          Continue with Google
         </button>
-        <div class="divider">or</div>
-        <div class="input-box"><input type="email" id="emailInput" placeholder="Email" /></div>
-        <div class="input-box"><input type="password" id="passwordInput" placeholder="Password" /></div>
-        <button class="primary-btn" onclick="emailLogin()">Login</button>
+        <div class="divider">or continue with email</div>
+        <div class="input-box"><input type="email" id="emailInput" placeholder="Email address"></div>
+        <div class="input-box"><input type="password" id="passwordInput" placeholder="Password"></div>
+        <button class="primary-btn" onclick="emailLogin()">Sign In →</button>
       </div>
 
       <!-- SIGNUP -->
@@ -110,23 +453,30 @@ body { background:black; color:white; }
           <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/><path fill="#FBBC05" d="M10.6 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6z"/><path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.5 14.7 48 24 48z"/></svg>
           Sign up with Google
         </button>
-        <div class="divider">or</div>
-        <div class="input-box"><input type="text" id="signupName" placeholder="Full Name" /></div>
-        <div class="input-box"><input type="email" id="signupEmail" placeholder="Email" /></div>
-        <div class="input-box"><input type="password" id="signupPassword" placeholder="Password (min 6 chars)" /></div>
-        <button class="primary-btn" onclick="signup()">Create Account</button>
+        <div class="divider">or sign up with email</div>
+        <div class="input-box"><input type="text" id="signupName" placeholder="Full Name"></div>
+        <div class="input-box"><input type="email" id="signupEmail" placeholder="Email address"></div>
+        <div class="input-box"><input type="password" id="signupPassword" placeholder="Password (min 6 chars)"></div>
+        <button class="primary-btn" onclick="signup()">Create Account →</button>
+      </div>
+
+      <div class="auth-terms">
+        By continuing, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
       </div>
     </div>
   </div>
+
 </div>
 
 <script>
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t, i) => {
-    t.classList.toggle('active', (i === 0 && tab === 'login') || (i === 1 && tab === 'signup'));
+    t.classList.toggle('active', (i===0 && tab==='login') || (i===1 && tab==='signup'));
   });
-  document.getElementById('loginPanel').classList.toggle('active', tab === 'login');
-  document.getElementById('signupPanel').classList.toggle('active', tab === 'signup');
+  document.getElementById('loginPanel').classList.toggle('active', tab==='login');
+  document.getElementById('signupPanel').classList.toggle('active', tab==='signup');
+  document.querySelector('.auth-title').textContent = tab==='login' ? 'Welcome back 👋' : 'Join NexFounder 🚀';
+  document.querySelector('.auth-sub').textContent = tab==='login' ? 'Sign in to continue building your future' : 'Create your account and find your co-founder';
 }
 </script>
 <script type="module" src="app.js"></script>
