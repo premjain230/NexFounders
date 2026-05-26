@@ -35,6 +35,7 @@ const saveBtn          = document.getElementById("saveBtn");
 const inputName        = document.getElementById("inputName");
 const inputUsername    = document.getElementById("inputUsername");
 const inputBio         = document.getElementById("inputBio");
+const inputShowEmail   = document.getElementById("inputShowEmail");
 const postsContainer   = document.getElementById("userPosts");
 
 // ── AUTH ──────────────────────────────────────────────
@@ -54,7 +55,7 @@ onAuthStateChanged(auth, async (user) => {
     profileData = {
       displayName: name, username: name, bio: "", initials: initials(name),
       followers: [], following: [], connections: [], pendingConnections: [], sentConnections: [],
-      email: user.email, photoURL: "", bannerURL: ""
+      email: user.email, photoURL: "", bannerURL: "", showEmail: true
     };
     await setDoc(userRef, profileData);
   }
@@ -68,7 +69,7 @@ onAuthStateChanged(auth, async (user) => {
   loadPostsRealtime();
 });
 
-// ── CLOUDINARY UPLOAD ────────────────────────────────
+// ── CLOUDINARY UPLOAD ─────────────────────────────────
 async function uploadToCloudinary(file) {
   const fd = new FormData();
   fd.append("file", file);
@@ -88,10 +89,19 @@ function renderProfile() {
   displayName.textContent      = profileData.displayName || "Unknown";
   displayUsername.textContent  = "@" + (profileData.username || "user");
   displayBio.textContent       = profileData.bio || "";
-  displayEmail.textContent     = profileData.email || "";
   followersCount.textContent   = profileData.followers.length;
   followingCount.textContent   = profileData.following.length;
   connectionsCount.textContent = profileData.connections.length;
+
+  // Email visibility
+  const showEmail = profileData.showEmail !== false; // default true
+  if (isOwnProfile) {
+    displayEmail.textContent = profileData.email || "";
+    displayEmail.style.display = "block";
+  } else {
+    displayEmail.textContent   = showEmail ? (profileData.email || "") : "";
+    displayEmail.style.display = showEmail ? "block" : "none";
+  }
 
   // Avatar
   if (profileData.photoURL) {
@@ -115,7 +125,6 @@ function renderProfile() {
   }
 
   if (isOwnProfile) {
-    // Own profile — show edit controls only
     openEditBtn.style.display   = "inline-flex";
     followBtn.style.display     = "none";
     connectBtn.style.display    = "none";
@@ -123,21 +132,18 @@ function renderProfile() {
     avatarEditBtn.style.display = "flex";
     bannerEditBtn.style.display = "block";
   } else {
-    // Other profile — hide edit controls, show social buttons
     openEditBtn.style.display   = "none";
     avatarEditBtn.style.display = "none";
     bannerEditBtn.style.display = "none";
     messageBtn.style.display    = "inline-flex";
 
-    // ── Render Follow Button ──
     renderFollowButton();
 
-    // ── Render Connect Button ──
-    const isConnected = profileData.connections.includes(currentUser.uid);
     getDoc(doc(db, "users", currentUser.uid)).then(mySnap => {
       const myData        = mySnap.data() || {};
       const iSent         = (myData.sentConnections    || []).includes(targetUid);
       const theyRequested = (myData.pendingConnections || []).includes(targetUid);
+      const isConnected   = (profileData.connections   || []).includes(currentUser.uid);
 
       connectBtn.style.display = "inline-flex";
       connectBtn.className     = "connectbtn";
@@ -159,19 +165,15 @@ function renderProfile() {
   }
 }
 
-// ── FOLLOW BUTTON RENDER ──────────────────────────────
+// ── FOLLOW BUTTON ─────────────────────────────────────
 function renderFollowButton() {
   const isFollowing = (profileData.followers || []).includes(currentUser.uid);
-
   followBtn.style.display = "inline-flex";
   followBtn.className     = "followbtn";
-
   if (isFollowing) {
-    followBtn.innerHTML = "✓ Following";
+    followBtn.innerHTML    = "✓ Following";
     followBtn.classList.add("following");
-    followBtn.title = "Click to unfollow";
-
-    // Hover: show "Unfollow" text
+    followBtn.title        = "Click to unfollow";
     followBtn.onmouseenter = () => { followBtn.innerHTML = "✕ Unfollow"; };
     followBtn.onmouseleave = () => { followBtn.innerHTML = "✓ Following"; };
   } else {
@@ -182,120 +184,77 @@ function renderFollowButton() {
   }
 }
 
-// ── FOLLOW CLICK ──────────────────────────────────────
 followBtn.onclick = async () => {
-  if (isOwnProfile) return; // safety guard
-
-  const myRef     = doc(db, "users", currentUser.uid);
-  const targetRef = doc(db, "users", targetUid);
+  if (isOwnProfile) return;
+  const myRef       = doc(db, "users", currentUser.uid);
+  const targetRef   = doc(db, "users", targetUid);
   const isFollowing = (profileData.followers || []).includes(currentUser.uid);
-
   followBtn.disabled = true;
-
   try {
     if (isFollowing) {
-      // Unfollow
       await updateDoc(targetRef, { followers: arrayRemove(currentUser.uid) });
       await updateDoc(myRef,     { following: arrayRemove(targetUid) });
     } else {
-      // Follow
       await updateDoc(targetRef, { followers: arrayUnion(currentUser.uid) });
       await updateDoc(myRef,     { following: arrayUnion(targetUid) });
-
-      // Send notification
       const meSnap = await getDoc(myRef);
       const me     = meSnap.data() || {};
       await addDoc(collection(db, "notifications"), {
-        toUid:        targetUid,
-        fromUid:      currentUser.uid,
-        fromName:     me.displayName     || "",
-        fromUsername: me.username        || "",
-        fromPhoto:    me.photoURL        || "",
-        type:         "new_follower",
-        read:         false,
-        createdAt:    serverTimestamp()
+        toUid: targetUid, fromUid: currentUser.uid,
+        fromName: me.displayName || "", fromUsername: me.username || "",
+        fromPhoto: me.photoURL || "", type: "new_follower",
+        read: false, createdAt: serverTimestamp()
       });
     }
-  } catch (err) {
-    console.error("Follow error:", err);
-    alert("Something went wrong. Please try again.");
-  }
-
+  } catch (err) { console.error(err); alert("Something went wrong."); }
   followBtn.disabled = false;
-  // onSnapshot will auto-update profileData and re-render the button
 };
 
-// ── CONNECT CLICK ─────────────────────────────────────
+// ── CONNECT BUTTON ────────────────────────────────────
 connectBtn.onclick = async () => {
-  const myRef     = doc(db, "users", currentUser.uid);
+  const myRef   = doc(db, "users", currentUser.uid);
   const targetRef = doc(db, "users", targetUid);
-  const mySnap    = await getDoc(myRef);
-  const myData    = mySnap.data() || {};
+  const mySnap  = await getDoc(myRef);
+  const myData  = mySnap.data() || {};
 
-  const isConnected   = (profileData.connections    || []).includes(currentUser.uid);
-  const iSent         = (myData.sentConnections     || []).includes(targetUid);
-  const theyRequested = (myData.pendingConnections  || []).includes(targetUid);
-
+  const isConnected   = (profileData.connections   || []).includes(currentUser.uid);
+  const iSent         = (myData.sentConnections    || []).includes(targetUid);
+  const theyRequested = (myData.pendingConnections || []).includes(targetUid);
   connectBtn.disabled = true;
-
   try {
     if (isConnected) {
-      // Disconnect
       await updateDoc(myRef,     { connections: arrayRemove(targetUid) });
       await updateDoc(targetRef, { connections: arrayRemove(currentUser.uid) });
     } else if (iSent) {
-      // Cancel request
       await updateDoc(myRef,     { sentConnections:    arrayRemove(targetUid) });
       await updateDoc(targetRef, { pendingConnections: arrayRemove(currentUser.uid) });
     } else if (theyRequested) {
-      // Accept
-      await updateDoc(myRef, {
-        pendingConnections: arrayRemove(targetUid),
-        connections:        arrayUnion(targetUid)
-      });
-      await updateDoc(targetRef, {
-        sentConnections: arrayRemove(currentUser.uid),
-        connections:     arrayUnion(currentUser.uid)
-      });
+      await updateDoc(myRef, { pendingConnections: arrayRemove(targetUid), connections: arrayUnion(targetUid) });
+      await updateDoc(targetRef, { sentConnections: arrayRemove(currentUser.uid), connections: arrayUnion(currentUser.uid) });
       await addDoc(collection(db, "notifications"), {
-        toUid:        targetUid,
-        fromUid:      currentUser.uid,
-        fromName:     profileData.displayName || "",
-        fromUsername: profileData.username    || "",
-        fromPhoto:    profileData.photoURL    || "",
-        type:         "connect_accepted",
-        read:         false,
-        createdAt:    serverTimestamp()
+        toUid: targetUid, fromUid: currentUser.uid,
+        fromName: profileData.displayName || "", fromUsername: profileData.username || "",
+        fromPhoto: profileData.photoURL || "", type: "connect_accepted",
+        read: false, createdAt: serverTimestamp()
       });
     } else {
-      // Send request
       await updateDoc(myRef,     { sentConnections:    arrayUnion(targetUid) });
       await updateDoc(targetRef, { pendingConnections: arrayUnion(currentUser.uid) });
       const meSnap = await getDoc(myRef);
       const me     = meSnap.data() || {};
       await addDoc(collection(db, "notifications"), {
-        toUid:        targetUid,
-        fromUid:      currentUser.uid,
-        fromName:     me.displayName  || "",
-        fromUsername: me.username     || "",
-        fromPhoto:    me.photoURL     || "",
-        type:         "connect_request",
-        read:         false,
-        createdAt:    serverTimestamp()
+        toUid: targetUid, fromUid: currentUser.uid,
+        fromName: me.displayName || "", fromUsername: me.username || "",
+        fromPhoto: me.photoURL || "", type: "connect_request",
+        read: false, createdAt: serverTimestamp()
       });
     }
-  } catch (err) {
-    console.error("Connect error:", err);
-    alert("Something went wrong. Please try again.");
-  }
-
+  } catch (err) { console.error(err); alert("Something went wrong."); }
   connectBtn.disabled = false;
 };
 
 // ── MESSAGE BUTTON ────────────────────────────────────
-messageBtn.onclick = () => {
-  location.href = `messages.html?uid=${targetUid}`;
-};
+messageBtn.onclick = () => { location.href = `chat.html?uid=${targetUid}`; };
 
 // ── FILE PICKERS ──────────────────────────────────────
 avatar.addEventListener("click", () => { if (isOwnProfile) avatarInput.click(); });
@@ -309,7 +268,7 @@ avatarInput.addEventListener("change", async (e) => {
   try {
     const url = await uploadToCloudinary(file);
     await updateDoc(doc(db, "users", currentUser.uid), { photoURL: url });
-  } catch { alert("Failed to upload photo"); }
+  } catch { alert("Failed to upload photo."); }
   avatar.style.opacity = "1";
   e.target.value = "";
 });
@@ -320,7 +279,7 @@ bannerInput.addEventListener("change", async (e) => {
   try {
     const url = await uploadToCloudinary(file);
     await updateDoc(doc(db, "users", currentUser.uid), { bannerURL: url });
-  } catch { alert("Failed to upload banner"); }
+  } catch { alert("Failed to upload banner."); }
   banner.style.opacity = "1";
   e.target.value = "";
 });
@@ -330,26 +289,25 @@ openEditBtn.onclick = () => {
   inputName.value     = profileData.displayName || "";
   inputUsername.value = profileData.username    || "";
   inputBio.value      = profileData.bio         || "";
+  // Set email toggle checkbox
+  inputShowEmail.checked = profileData.showEmail !== false;
   editModal.classList.add("open");
 };
 
 cancelBtn.onclick = () => editModal.classList.remove("open");
-
-editModal.addEventListener("click", (e) => {
-  if (e.target === editModal) editModal.classList.remove("open");
-});
+editModal.addEventListener("click", (e) => { if (e.target === editModal) editModal.classList.remove("open"); });
 
 saveBtn.onclick = async () => {
-  const name     = inputName.value.trim();
-  const username = inputUsername.value.trim();
-  const bio      = inputBio.value.trim();
+  const name      = inputName.value.trim();
+  const username  = inputUsername.value.trim();
+  const bio       = inputBio.value.trim();
+  const showEmail = inputShowEmail.checked;
   if (!name || !username) { alert("Name and username are required."); return; }
-
   saveBtn.disabled    = true;
   saveBtn.textContent = "Saving...";
   try {
     await updateDoc(doc(db, "users", currentUser.uid), {
-      displayName: name, username, bio, initials: initials(name)
+      displayName: name, username, bio, initials: initials(name), showEmail
     });
     editModal.classList.remove("open");
   } catch { alert("Update failed. Please try again."); }
@@ -370,33 +328,121 @@ function loadPostsRealtime() {
       return;
     }
     postsContainer.innerHTML = "";
-    snapshot.forEach(ds => renderPost(ds.data()));
+    snapshot.forEach(ds => renderPost(ds.id, ds.data()));
   });
 }
 
-function renderPost(post) {
+function renderPost(postId, post) {
+  const liked     = (post.likes || []).includes(currentUser.uid);
+  const likeCount = (post.likes || []).length;
+  const comments  = post.comments || [];
+  const time      = post.createdAt
+    ? new Date(post.createdAt.seconds * 1000).toLocaleDateString()
+    : "";
+
   const div = document.createElement("div");
+  div.style.cssText = "background:#0f172a;border:1px solid #1e293b;border-radius:20px;padding:18px;margin-bottom:18px;";
   div.innerHTML = `
-    <div style="background:#0f172a;border:1px solid #1e293b;border-radius:20px;padding:18px;margin-bottom:18px;">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <div style="width:46px;height:46px;border-radius:50%;background:${post.photoURL ? `url(${post.photoURL}) center/cover` : "#2563eb"};display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden;flex-shrink:0;">
-          ${post.photoURL ? "" : (profileData?.initials || "?")}
-        </div>
-        <div>
-          <div style="font-weight:700;font-size:15px">${profileData?.displayName || ""}</div>
-          <div style="color:#64748b;font-size:13px">@${profileData?.username || ""} · ${post.createdAt ? new Date(post.createdAt.seconds * 1000).toLocaleDateString() : ""}</div>
-        </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div style="width:46px;height:46px;border-radius:50%;background:${post.photoURL ? `url(${post.photoURL}) center/cover` : "#2563eb"};display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden;flex-shrink:0;">
+        ${post.photoURL ? "" : (profileData?.initials || "?")}
       </div>
-      <div style="color:#e2e8f0;line-height:1.6;font-size:15px">${post.text || ""}</div>
-      ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;margin-top:14px;border-radius:16px;border:1px solid #1e293b;max-height:500px;object-fit:cover;">` : ""}
-      ${post.videoUrl ? `<video src="${post.videoUrl}" controls style="width:100%;margin-top:14px;border-radius:16px;border:1px solid #1e293b;"></video>` : ""}
-      <div style="margin-top:12px;color:#64748b;font-size:13px">❤️ ${post.likes?.length || 0} &nbsp; 💬 ${post.comments?.length || 0}</div>
+      <div>
+        <div style="font-weight:700;font-size:15px">${profileData?.displayName || ""}</div>
+        <div style="color:#64748b;font-size:13px">@${profileData?.username || ""} · ${time}</div>
+      </div>
+    </div>
+    <div style="color:#e2e8f0;line-height:1.6;font-size:15px;margin-bottom:12px">${post.text || ""}</div>
+    ${post.imageUrl ? `<img src="${post.imageUrl}" style="width:100%;margin-top:4px;margin-bottom:12px;border-radius:16px;border:1px solid #1e293b;max-height:500px;object-fit:cover;">` : ""}
+    ${post.videoUrl ? `<video src="${post.videoUrl}" controls style="width:100%;margin-bottom:12px;border-radius:16px;border:1px solid #1e293b;"></video>` : ""}
+
+    <div style="display:flex;gap:8px;margin-bottom:12px;padding-top:8px;border-top:1px solid #1e293b;">
+      <button class="profile-like-btn" data-id="${postId}" data-liked="${liked}" style="
+        display:flex;align-items:center;gap:6px;padding:8px 14px;border:none;
+        border-radius:999px;cursor:pointer;font-size:13px;font-weight:700;
+        background:${liked ? "rgba(244,63,94,0.12)" : "transparent"};
+        color:${liked ? "#f43f5e" : "#64748b"};transition:0.2s;font-family:inherit;">
+        ${liked ? "❤️" : "🤍"} <span class="lcount">${likeCount}</span>
+      </button>
+      <button class="profile-comment-toggle" style="
+        display:flex;align-items:center;gap:6px;padding:8px 14px;border:none;
+        border-radius:999px;cursor:pointer;font-size:13px;font-weight:700;
+        background:transparent;color:#64748b;transition:0.2s;font-family:inherit;">
+        💬 <span>${comments.length}</span>
+      </button>
+    </div>
+
+    <div class="profile-comments-section" style="display:none;">
+      <div class="profile-comments-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+        ${comments.map(c => `
+          <div style="background:rgba(255,255,255,0.03);border:1px solid #1e293b;border-radius:14px;padding:10px 14px;font-size:14px;color:#dbe6f4;">
+            <b style="color:#94a3b8">@${c.username}</b> ${c.text}
+          </div>
+        `).join("")}
+      </div>
+      <div style="display:flex;gap:8px;">
+        <input type="text" placeholder="Write a comment..." style="
+          flex:1;background:rgba(255,255,255,0.03);border:1px solid #1e293b;
+          border-radius:999px;padding:10px 16px;color:white;outline:none;
+          font-size:14px;font-family:inherit;transition:0.2s;">
+        <button style="
+          border:none;padding:10px 16px;border-radius:999px;
+          background:linear-gradient(135deg,#2563eb,#22d3ee);
+          color:white;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">
+          Post
+        </button>
+      </div>
     </div>
   `;
-  postsContainer.appendChild(div);
-}
 
-// ── HELPERS ───────────────────────────────────────────
-function initials(name = "") {
-  return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
-}
+  // Like button
+  div.querySelector(".profile-like-btn").onclick = async (e) => {
+    const btn       = e.currentTarget;
+    const pid       = btn.dataset.id;
+    const wasLiked  = btn.dataset.liked === "true";
+    const ref       = doc(db, "posts", pid);
+    await updateDoc(ref, { likes: wasLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid) });
+    if (!wasLiked && post.uid !== currentUser.uid) {
+      const meSnap = await getDoc(doc(db, "users", currentUser.uid));
+      const me = meSnap.data() || {};
+      await addDoc(collection(db, "notifications"), {
+        toUid: post.uid, fromUid: currentUser.uid,
+        fromName: me.displayName || "", fromUsername: me.username || "",
+        fromPhoto: me.photoURL || "", type: "like",
+        postId: pid, postText: post.text?.slice(0, 60) || "",
+        read: false, createdAt: serverTimestamp()
+      });
+    }
+    // Optimistic UI update
+    const newLiked  = !wasLiked;
+    btn.dataset.liked = String(newLiked);
+    const newCount  = parseInt(btn.querySelector(".lcount").textContent) + (newLiked ? 1 : -1);
+    btn.querySelector(".lcount").textContent = newCount;
+    btn.style.background = newLiked ? "rgba(244,63,94,0.12)" : "transparent";
+    btn.style.color      = newLiked ? "#f43f5e" : "#64748b";
+    btn.innerHTML        = `${newLiked ? "❤️" : "🤍"} <span class="lcount">${newCount}</span>`;
+  };
+
+  // Comment toggle
+  const commentsSection = div.querySelector(".profile-comments-section");
+  div.querySelector(".profile-comment-toggle").onclick = () => {
+    const isOpen = commentsSection.style.display !== "none";
+    commentsSection.style.display = isOpen ? "none" : "block";
+  };
+
+  // Comment submit
+  const commentInput = div.querySelector("input[type=text]");
+  div.querySelector(".profile-comments-section button").onclick = async () => {
+    const text = commentInput.value.trim();
+    if (!text) return;
+    const meSnap = await getDoc(doc(db, "users", currentUser.uid));
+    const me = meSnap.data() || {};
+    await updateDoc(doc(db, "posts", postId), {
+      comments: arrayUnion({ uid: currentUser.uid, username: me.username || "user", text })
+    });
+    if (post.uid !== currentUser.uid) {
+      await addDoc(collection(db, "notifications"), {
+        toUid: post.uid, fromUid: currentUser.uid,
+        fromName: me.displayName || "", fromUsername: me.username || "",
+        fromPhoto: me.photoURL || "", type: "comment",
+        postId, postText: post.text?.slice(0, 6
