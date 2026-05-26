@@ -36,35 +36,16 @@ body{ background:#0b1220; color:white; font-family:system-ui, Arial; }
 
 .btn-row{ display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; align-items:center; }
 
-.editbtn{
-  padding:12px 20px; border:none; border-radius:12px; cursor:pointer; font-weight:700; transition:0.2s; font-size:14px;
-  background:#2563eb; color:white; display:inline-flex; align-items:center; gap:7px;
-}
+.editbtn{ padding:12px 20px; border:none; border-radius:12px; cursor:pointer; font-weight:700; transition:0.2s; font-size:14px; background:#2563eb; color:white; display:inline-flex; align-items:center; gap:7px; }
 .editbtn:hover{ background:#3b82f6; }
 
-/* ── FOLLOW BUTTON ── */
-.followbtn{
-  padding:12px 22px; border:none; border-radius:12px; cursor:pointer; font-weight:700;
-  font-size:14px; display:inline-flex; align-items:center; gap:7px; transition:all 0.2s;
-  background:linear-gradient(135deg,#22d3ee 0%,#2563eb 100%); color:white;
-}
+.followbtn{ padding:12px 22px; border:none; border-radius:12px; cursor:pointer; font-weight:700; font-size:14px; display:inline-flex; align-items:center; gap:7px; transition:all 0.2s; background:linear-gradient(135deg,#22d3ee 0%,#2563eb 100%); color:white; }
 .followbtn:hover{ opacity:0.88; transform:translateY(-1px); }
-.followbtn:active{ transform:translateY(0); }
 .followbtn:disabled{ opacity:0.55; cursor:not-allowed; transform:none; }
-.followbtn.following{
-  background:transparent; border:1.5px solid #334155; color:#94a3b8;
-  transform:none;
-}
-.followbtn.following:hover{
-  border-color:#ef4444; color:#ef4444;
-  background:rgba(239,68,68,0.07); opacity:1; transform:none;
-}
+.followbtn.following{ background:transparent; border:1.5px solid #334155; color:#94a3b8; transform:none; }
+.followbtn.following:hover{ border-color:#ef4444; color:#ef4444; background:rgba(239,68,68,0.07); opacity:1; transform:none; }
 
-/* ── CONNECT BUTTON ── */
-.connectbtn{
-  padding:12px 20px; border:none; border-radius:12px; cursor:pointer; font-weight:700;
-  transition:0.2s; font-size:14px; display:inline-flex; align-items:center; gap:7px;
-}
+.connectbtn{ padding:12px 20px; border:none; border-radius:12px; cursor:pointer; font-weight:700; transition:0.2s; font-size:14px; display:inline-flex; align-items:center; gap:7px; }
 .connectbtn.default{ background:#22d3ee; color:#0b1220; }
 .connectbtn.default:hover{ background:#06b6d4; }
 .connectbtn.pending{ background:transparent; border:1px solid #334155; color:#64748b; }
@@ -72,12 +53,7 @@ body{ background:#0b1220; color:white; font-family:system-ui, Arial; }
 .connectbtn.accept{ background:#10b981; color:white; }
 .connectbtn:disabled{ opacity:0.55; cursor:not-allowed; }
 
-/* ── MESSAGE BUTTON ── */
-.messagebtn{
-  padding:12px 20px; border-radius:12px; cursor:pointer; font-weight:700; font-size:14px;
-  background:#1e293b; color:white; border:1px solid #334155; transition:0.2s;
-  display:inline-flex; align-items:center; gap:7px;
-}
+.messagebtn{ padding:12px 20px; border-radius:12px; cursor:pointer; font-weight:700; font-size:14px; background:#1e293b; color:white; border:1px solid #334155; transition:0.2s; display:inline-flex; align-items:center; gap:7px; }
 .messagebtn:hover{ background:#2d3f55; }
 
 .bio{ margin-top:22px; color:#cbd5e1; line-height:1.7; font-size:15px; }
@@ -91,13 +67,45 @@ body{ background:#0b1220; color:white; font-family:system-ui, Arial; }
 .postsection{ margin-top:28px; }
 .empty{ background:#0f172a; border:1px solid #1e293b; border-radius:20px; padding:50px; text-align:center; color:#64748b; }
 
+/* MODAL */
 .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.72); justify-content:center; align-items:center; z-index:500; }
 .modal-overlay.open{ display:flex; }
 .modal{ background:#0f172a; padding:28px; border-radius:22px; width:100%; max-width:480px; border:1px solid #1e293b; box-shadow:0 15px 45px rgba(0,0,0,0.45); }
+.modal h3{ font-size:18px; font-weight:800; margin-bottom:20px; color:white; }
 .field{ margin-bottom:14px; }
-.field input, .field textarea{ width:100%; padding:13px 14px; border-radius:14px; border:1px solid #1e293b; background:#0b1220; color:white; outline:none; resize:none; font-family:inherit; font-size:15px; transition:0.2s; }
+.field input[type="text"],
+.field input[type="email"],
+.field textarea{
+  width:100%; padding:13px 14px; border-radius:14px; border:1px solid #1e293b;
+  background:#0b1220; color:white; outline:none; resize:none; font-family:inherit;
+  font-size:15px; transition:0.2s;
+}
 .field input:focus, .field textarea:focus{ border-color:#22d3ee; }
 .field textarea{ min-height:110px; }
+
+/* Toggle field */
+.toggle-field{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 16px; border-radius:14px; border:1px solid #1e293b;
+  background:#0b1220; margin-bottom:14px;
+}
+.toggle-label{ font-size:14px; color:#94a3b8; }
+.toggle-label span{ display:block; font-size:12px; color:#64748b; margin-top:2px; }
+
+/* iOS-style toggle switch */
+.toggle-switch{ position:relative; width:44px; height:24px; flex-shrink:0; }
+.toggle-switch input{ opacity:0; width:0; height:0; }
+.toggle-slider{
+  position:absolute; inset:0; cursor:pointer;
+  border-radius:999px; background:#334155; transition:0.25s;
+}
+.toggle-slider::before{
+  content:""; position:absolute; width:18px; height:18px;
+  left:3px; bottom:3px; border-radius:50%; background:white; transition:0.25s;
+}
+.toggle-switch input:checked + .toggle-slider{ background:#22d3ee; }
+.toggle-switch input:checked + .toggle-slider::before{ transform:translateX(20px); }
+
 .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:16px; }
 .savebtn{ background:#22d3ee; color:#0b1220; border:none; padding:12px 20px; border-radius:12px; cursor:pointer; font-weight:700; transition:0.2s; }
 .savebtn:hover{ background:#06b6d4; }
@@ -149,12 +157,10 @@ body{ background:#0b1220; color:white; font-family:system-ui, Arial; }
       <div class="email" id="displayEmail"></div>
 
       <div class="btn-row">
-        <!-- Own profile -->
-        <button class="editbtn" id="openEditBtn" style="display:none">✎ Edit Profile</button>
-        <!-- Other profiles only -->
-        <button class="followbtn" id="followBtn" style="display:none">＋ Follow</button>
+        <button class="editbtn"     id="openEditBtn" style="display:none">✎ Edit Profile</button>
+        <button class="followbtn"   id="followBtn"   style="display:none">＋ Follow</button>
         <button class="connectbtn default" id="connectBtn" style="display:none">Connect</button>
-        <button class="messagebtn" id="messageBtn" style="display:none">💬 Message</button>
+        <button class="messagebtn"  id="messageBtn"  style="display:none">💬 Message</button>
       </div>
 
       <div class="bio" id="displayBio"></div>
@@ -184,16 +190,31 @@ body{ background:#0b1220; color:white; font-family:system-ui, Arial; }
 <!-- EDIT MODAL -->
 <div class="modal-overlay" id="editModal">
   <div class="modal">
-    <div class="field"><input id="inputName" placeholder="Name"></div>
-    <div class="field"><input id="inputUsername" placeholder="Username"></div>
-    <div class="field"><textarea id="inputBio" placeholder="Bio"></textarea></div>
+    <h3>Edit Profile</h3>
+    <div class="field"><input type="text" id="inputName"     placeholder="Full Name"></div>
+    <div class="field"><input type="text" id="inputUsername" placeholder="Username"></div>
+    <div class="field"><textarea id="inputBio" placeholder="Bio (tell the world about yourself...)"></textarea></div>
+
+    <!-- Email visibility toggle -->
+    <div class="toggle-field">
+      <div class="toggle-label">
+        Show email on profile
+        <span>When off, your email is hidden from others</span>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="inputShowEmail" checked>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
     <div class="modal-actions">
       <button class="cancelbtn" id="cancelBtn">Cancel</button>
-      <button class="savebtn" id="saveBtn">Save</button>
+      <button class="savebtn"   id="saveBtn">Save</button>
     </div>
   </div>
 </div>
 
 <script type="module" src="profile.js"></script>
 </body>
-</html>
+                                           </html>
+          
