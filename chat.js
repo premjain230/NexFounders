@@ -15,41 +15,32 @@ import {
   arrayRemove
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* STATE */
 let currentUser = null;
 let otherUser = null;
 let activeConvId = null;
 let unsubMessages = null;
 
 /* DOM */
+const chatAvatar = document.getElementById("chatAvatar");
+const chatName = document.getElementById("chatName");
+const chatUsername = document.getElementById("chatUsername");
 const messagesArea = document.getElementById("messagesArea");
 const msgInput = document.getElementById("msgInput");
 const sendBtn = document.getElementById("sendBtn");
-const chatName = document.getElementById("chatName");
-const chatUsername = document.getElementById("chatUsername");
-const chatAvatar = document.getElementById("chatAvatar");
 
-/* GET UID */
 const params = new URLSearchParams(location.search);
 const otherUid = params.get("uid");
 
 /* AUTH */
 onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    location.href = "index.html";
-    return;
-  }
+  if (!user) return location.href = "index.html";
+  if (!otherUid) return location.href = "messages.html";
 
   currentUser = user;
 
-  if (!otherUid) {
-    location.href = "messages.html";
-    return;
-  }
-
   await loadOtherUser();
 
-  activeConvId = [currentUser.uid, otherUid].sort().join("_");
+  activeConvId = [user.uid, otherUid].sort().join("_");
 
   openChat();
 });
@@ -57,50 +48,25 @@ onAuthStateChanged(auth, async (user) => {
 /* LOAD USER */
 async function loadOtherUser() {
   const snap = await getDoc(doc(db, "users", otherUid));
-
-  if (!snap.exists()) {
-    location.href = "messages.html";
-    return;
-  }
+  if (!snap.exists()) return location.href = "messages.html";
 
   otherUser = snap.data();
 
   chatName.textContent = otherUser.displayName || "User";
   chatUsername.textContent = "@" + (otherUser.username || "user");
 
-  if (otherUser.photoURL) {
-    chatAvatar.innerHTML = `<img src="${otherUser.photoURL}">`;
-  } else {
-    chatAvatar.textContent = otherUser.initials || "?";
-  }
+  chatAvatar.innerHTML = otherUser.photoURL
+    ? `<img src="${otherUser.photoURL}">`
+    : (otherUser.initials || "?");
 }
 
-/* FORMAT TIME */
-function formatTime(ts) {
-  if (!ts?.toDate) return "";
-  return ts.toDate().toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-/* SAFE TEXT */
-function escapeHTML(str) {
-  if (!str) return "";
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-/* OPEN CHAT */
+/* CHAT STREAM */
 function openChat() {
   if (unsubMessages) unsubMessages();
 
   const q = query(
     collection(db, "messages"),
-    where("convId", "==", activeConvId),
-    orderBy("createdAt", "asc")
+    where("convId", "==", activeConvId)
   );
 
   unsubMessages = onSnapshot(q, (snap) => {
@@ -109,30 +75,30 @@ function openChat() {
     if (snap.empty) {
       messagesArea.innerHTML = `
         <div class="empty">
-          <div>💬</div>
-          <p>No messages yet</p>
-        </div>
-      `;
+          <div>👋</div>
+          <p>Start chatting with ${otherUser.displayName}</p>
+        </div>`;
       return;
     }
 
-    snap.forEach((d) => {
-      const m = d.data();
+    const msgs = [];
+    snap.forEach(d => msgs.push(d.data()));
 
-      if (!m.createdAt) return; // IMPORTANT SAFETY FIX
+    // IMPORTANT: sort safely (fix crash)
+    msgs.sort((a, b) =>
+      (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)
+    );
 
+    msgs.forEach(m => {
       const wrap = document.createElement("div");
-
       wrap.className =
         m.fromUid === currentUser.uid
           ? "msg-wrap msg-mine"
           : "msg-wrap msg-other";
 
       wrap.innerHTML = `
-        <div class="msg-bubble">${escapeHTML(m.text)}</div>
-        <div class="msg-time">${formatTime(m.createdAt)}</div>
+        <div class="msg-bubble">${escape(m.text)}</div>
       `;
-
       messagesArea.appendChild(wrap);
     });
 
@@ -147,7 +113,9 @@ async function sendMessage() {
 
   msgInput.value = "";
 
-  await addDoc(collection(db, "messages"), {
+  const msgRef = collection(db, "messages");
+
+  await addDoc(msgRef, {
     convId: activeConvId,
     fromUid: currentUser.uid,
     toUid: otherUid,
@@ -155,26 +123,23 @@ async function sendMessage() {
     createdAt: serverTimestamp()
   });
 
-  await setDoc(
-    doc(db, "conversations", activeConvId),
-    {
-      participants: [currentUser.uid, otherUid],
-      lastMessage: text,
-      lastMessageAt: serverTimestamp(),
-      unreadBy: [otherUid]
-    },
-    { merge: true }
-  );
+  await setDoc(doc(db, "conversations", activeConvId), {
+    participants: [currentUser.uid, otherUid],
+    lastMessage: text,
+    lastMessageAt: serverTimestamp(),
+    unreadBy: [otherUid]
+  }, { merge: true });
 }
 
-/* EVENTS */
-sendBtn.onclick = sendMessage;
+/* helpers */
+function escape(str = "") {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
+sendBtn.onclick = sendMessage;
 msgInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") sendMessage();
-});
-
-/* CLEANUP */
-window.addEventListener("beforeunload", () => {
-  if (unsubMessages) unsubMessages();
 });
