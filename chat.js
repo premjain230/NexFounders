@@ -16,7 +16,8 @@ import {
   orderBy,
   onSnapshot,
   serverTimestamp,
-  arrayRemove
+  arrayRemove,
+  limit
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* STATE */
@@ -44,7 +45,7 @@ const msgInput =
 const sendBtn =
   document.getElementById("sendBtn");
 
-/* URL PARAM */
+/* URL */
 const params =
   new URLSearchParams(location.search);
 
@@ -70,12 +71,37 @@ onAuthStateChanged(auth, async(user)=>{
 
   }
 
-  await loadOtherUser();
+  try{
 
-  activeConvId =
-    convId(currentUser.uid, otherUid);
+    await loadOtherUser();
 
-  openChat();
+    activeConvId =
+      convId(
+        currentUser.uid,
+        otherUid
+      );
+
+    await openChat();
+
+  }catch(error){
+
+    console.error(error);
+
+    messagesArea.innerHTML = `
+
+      <div class="empty">
+
+        <div>⚠️</div>
+
+        <p>
+          Failed to load chat
+        </p>
+
+      </div>
+
+    `;
+
+  }
 
 });
 
@@ -95,7 +121,9 @@ function escapeHTML(str){
   return str
     .replace(/&/g,"&amp;")
     .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;");
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
 
 }
 
@@ -103,39 +131,49 @@ function formatTime(ts){
 
   if(!ts?.toDate) return "";
 
-  return ts.toDate().toLocaleTimeString([],{
-    hour:"2-digit",
-    minute:"2-digit"
-  });
+  return ts
+    .toDate()
+    .toLocaleTimeString([],{
+      hour:"2-digit",
+      minute:"2-digit"
+    });
 
 }
 
-/* LOAD OTHER USER */
+/* LOAD USER */
 async function loadOtherUser(){
 
   const snap =
-    await getDoc(doc(db,"users",otherUid));
+    await getDoc(
+      doc(db,"users",otherUid)
+    );
 
   if(!snap.exists()){
 
-    location.href = "messages.html";
+    location.href =
+      "messages.html";
+
     return;
 
   }
 
   otherUser = snap.data();
 
-  /* UI */
   chatName.textContent =
     otherUser.displayName || "User";
 
   chatUsername.textContent =
-    `@${otherUser.username || "user"}`;
+    `@${
+      otherUser.username || "user"
+    }`;
 
   if(otherUser.photoURL){
 
     chatAvatar.innerHTML = `
-      <img src="${otherUser.photoURL}">
+
+      <img
+      src="${otherUser.photoURL}">
+
     `;
 
   }else{
@@ -150,86 +188,133 @@ async function loadOtherUser(){
 /* OPEN CHAT */
 async function openChat(){
 
-  /* MARK READ */
-  await updateDoc(
-    doc(db,"conversations",activeConvId),
+  await setDoc(
+    doc(
+      db,
+      "conversations",
+      activeConvId
+    ),
     {
-      unreadBy:arrayRemove(currentUser.uid)
+      participants:[
+        currentUser.uid,
+        otherUid
+      ],
+      unreadBy:[]
+    },
+    {
+      merge:true
+    }
+  );
+
+  await updateDoc(
+    doc(
+      db,
+      "conversations",
+      activeConvId
+    ),
+    {
+      unreadBy:
+        arrayRemove(
+          currentUser.uid
+        )
     }
   ).catch(()=>{});
 
   const q = query(
     collection(db,"messages"),
-    where("convId","==",activeConvId),
-    orderBy("createdAt","asc")
+    where(
+      "convId",
+      "==",
+      activeConvId
+    ),
+    orderBy(
+      "createdAt",
+      "asc"
+    ),
+    limit(100)
   );
 
-  unsubMessages = onSnapshot(q,(snap)=>{
+  unsubMessages =
+    onSnapshot(q,(snap)=>{
 
-    messagesArea.innerHTML = "";
+      messagesArea.innerHTML = "";
 
-    if(snap.empty){
+      if(snap.empty){
 
-      messagesArea.innerHTML = `
+        messagesArea.innerHTML = `
 
-        <div class="empty">
+          <div class="empty">
 
-          <div>👋</div>
+            <div>👋</div>
 
-          <p>
-            Start conversation with
-            ${otherUser.displayName || "User"}
-          </p>
+            <p>
+              Start chatting with
+              ${
+                escapeHTML(
+                  otherUser.displayName
+                )
+              }
+            </p>
 
-        </div>
+          </div>
 
-      `;
+        `;
 
-      return;
+        return;
 
-    }
+      }
 
-    snap.forEach(d=>{
+      snap.forEach((d)=>{
 
-      const m = d.data();
+        const m = d.data();
 
-      const wrap =
-        document.createElement("div");
+        const wrap =
+          document.createElement(
+            "div"
+          );
 
-      wrap.className =
-        m.fromUid===currentUser.uid
-        ? "msg-wrap msg-mine"
-        : "msg-wrap msg-other";
+        wrap.className =
+          m.fromUid===currentUser.uid
+          ? "msg-wrap msg-mine"
+          : "msg-wrap msg-other";
 
-      wrap.innerHTML = `
+        wrap.innerHTML = `
 
-        <div class="msg-bubble">
+          <div class="msg-bubble">
 
-          ${escapeHTML(m.text)}
+            ${
+              escapeHTML(
+                m.text || ""
+              )
+            }
 
-        </div>
+          </div>
 
-        <div class="msg-time">
+          <div class="msg-time">
 
-          ${formatTime(m.createdAt)}
+            ${
+              formatTime(
+                m.createdAt
+              )
+            }
 
-        </div>
+          </div>
 
-      `;
+        `;
 
-      messagesArea.appendChild(wrap);
+        messagesArea
+          .appendChild(wrap);
+
+      });
+
+      messagesArea.scrollTop =
+        messagesArea.scrollHeight;
 
     });
 
-    /* AUTO SCROLL */
-    messagesArea.scrollTop =
-      messagesArea.scrollHeight;
-
-  });
-
 }
 
-/* SEND MESSAGE */
+/* SEND */
 async function sendMessage(){
 
   const text =
@@ -237,68 +322,104 @@ async function sendMessage(){
 
   if(!text) return;
 
-  msgInput.value = "";
+  if(text.length > 1000) return;
 
-  /* SAVE MESSAGE */
-  await addDoc(
-    collection(db,"messages"),
-    {
-      convId:activeConvId,
+  sendBtn.disabled = true;
 
-      fromUid:currentUser.uid,
+  try{
 
-      toUid:otherUid,
+    msgInput.value = "";
 
-      text,
+    await addDoc(
+      collection(db,"messages"),
+      {
+        convId:
+          activeConvId,
 
-      read:false,
+        fromUid:
+          currentUser.uid,
 
-      createdAt:serverTimestamp()
-    }
-  );
+        toUid:
+          otherUid,
 
-  /* UPDATE CONVERSATION */
-  await setDoc(
-    doc(db,"conversations",activeConvId),
-    {
-      participants:[
-        currentUser.uid,
-        otherUid
-      ],
+        text,
 
-      lastMessage:text,
+        read:false,
 
-      lastMessageAt:serverTimestamp(),
+        createdAt:
+          serverTimestamp()
+      }
+    );
 
-      unreadBy:[otherUid]
-    },
-    {
-      merge:true
-    }
-  );
+    await setDoc(
+      doc(
+        db,
+        "conversations",
+        activeConvId
+      ),
+      {
+        participants:[
+          currentUser.uid,
+          otherUid
+        ],
+
+        lastMessage:text,
+
+        lastMessageAt:
+          serverTimestamp(),
+
+        unreadBy:[
+          otherUid
+        ]
+      },
+      {
+        merge:true
+      }
+    );
+
+  }catch(error){
+
+    console.error(error);
+
+    alert(
+      "Message failed to send"
+    );
+
+  }
+
+  sendBtn.disabled = false;
 
 }
 
-/* SEND EVENTS */
-sendBtn.onclick = sendMessage;
+/* EVENTS */
+sendBtn.onclick =
+  sendMessage;
 
-msgInput.addEventListener("keydown",(e)=>{
+msgInput.addEventListener(
+  "keydown",
+  (e)=>{
 
-  if(e.key==="Enter"){
+    if(
+      e.key==="Enter"
+    ){
 
-    sendMessage();
+      sendMessage();
+
+    }
 
   }
-
-});
+);
 
 /* CLEANUP */
-window.addEventListener("beforeunload",()=>{
+window.addEventListener(
+  "beforeunload",
+  ()=>{
 
-  if(unsubMessages){
+    if(unsubMessages){
 
-    unsubMessages();
+      unsubMessages();
+
+    }
 
   }
-
-});
+);
