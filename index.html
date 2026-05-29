@@ -1,874 +1,290 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+import { auth, db } from "./firebase.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  collection, addDoc, doc, getDoc, getDocs,
+  query, orderBy, serverTimestamp, updateDoc,
+  arrayUnion, arrayRemove, onSnapshot, where, limit
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<title>NexFounder – Find your co-founder</title>
+let currentUser = null;
+let currentUserData = null;
+let currentTab = "forYou";
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+const postInput    = document.getElementById("postInput");
+const postBtn      = document.getElementById("postBtn");
+const mediaInput   = document.getElementById("mediaInput");
+const feedEl       = document.getElementById("feed");
+const navAvatar    = document.getElementById("navAvatar");
+const navName      = document.getElementById("navName");
+const searchInput  = document.getElementById("searchInput");
+const searchResults= document.getElementById("searchResults");
+const notifBadge   = document.getElementById("notifBadge");
+const msgBadge     = document.getElementById("msgBadge");
 
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+// ── TAB SWITCH ──────────────────────────────────────
+window.switchTab = function(tab) {
+  currentTab = tab;
+  document.getElementById("tabForYou").classList.toggle("active", tab === "forYou");
+  document.getElementById("tabFollowing").classList.toggle("active", tab === "following");
+  loadFeedRealtime();
+};
 
-<style>
+// ── AUTH ────────────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href = "index.html"; return; }
+  currentUser = user;
 
-:root{
-  --cyan:#22d3ee;
-  --blue:#2563eb;
-
-  --bg:#020817;
-  --bg2:#0b1220;
-  --bg3:#0f172a;
-
-  --border:#1e293b;
-  --border2:#2a3a54;
-
-  --text:#f1f5f9;
-  --muted:#64748b;
-  --muted2:#94a3b8;
-}
-
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-}
-
-body{
-  background:var(--bg);
-  color:var(--text);
-
-  font-family:'DM Sans',sans-serif;
-
-  min-height:100vh;
-  overflow-x:hidden;
-}
-
-/* ======================
-   BACKGROUND
-====================== */
-
-.bg-mesh{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  z-index:0;
-  overflow:hidden;
-}
-
-.bg-mesh::before{
-  content:'';
-  position:absolute;
-
-  width:700px;
-  height:700px;
-
-  border-radius:50%;
-
-  background:
-  radial-gradient(circle,
-  rgba(34,211,238,0.07) 0%,
-  transparent 70%);
-
-  top:-200px;
-  left:-150px;
-
-  animation:drift1 18s ease-in-out infinite alternate;
-}
-
-.bg-mesh::after{
-  content:'';
-  position:absolute;
-
-  width:600px;
-  height:600px;
-
-  border-radius:50%;
-
-  background:
-  radial-gradient(circle,
-  rgba(37,99,235,0.08) 0%,
-  transparent 70%);
-
-  bottom:-150px;
-  right:-100px;
-
-  animation:drift2 22s ease-in-out infinite alternate;
-}
-
-@keyframes drift1{
-  from{
-    transform:translate(0,0) scale(1);
+  const userSnap = await getDoc(doc(db, "users", user.uid));
+  if (userSnap.exists()) {
+    currentUserData = userSnap.data();
+    setAvatar(navAvatar, currentUserData);
+    navName.textContent = currentUserData.displayName || "You";
+    const createAvatar = document.getElementById("createAvatar");
+    if (createAvatar) setAvatar(createAvatar, currentUserData);
   }
-  to{
-    transform:translate(80px,60px) scale(1.1);
+
+  loadFeedRealtime();
+  watchNotifBadge();
+  watchMsgBadge();
+});
+
+// ── AVATAR HELPER ───────────────────────────────────
+function setAvatar(el, data) {
+  if (data.photoURL) {
+    el.innerHTML = `<img src="${data.photoURL}" class="nav-avatar-img">`;
+  } else {
+    el.textContent = data.initials || "?";
   }
 }
 
-@keyframes drift2{
-  from{
-    transform:translate(0,0) scale(1);
-  }
-  to{
-    transform:translate(-60px,-80px) scale(1.08);
-  }
+// ── CLOUDINARY ──────────────────────────────────────
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "nexfounder_upload");
+  const res = await fetch("https://api.cloudinary.com/v1_1/dr5uatib5/auto/upload", { method:"POST", body:formData });
+  const data = await res.json();
+  return data.secure_url;
 }
 
-.grid-lines{
-  position:fixed;
-  inset:0;
+// ── CREATE POST ─────────────────────────────────────
+postBtn.addEventListener("click", async () => {
+  const text = postInput.value.trim();
+  if (!text && !mediaInput.files[0]) return;
+  postBtn.disabled = true; postBtn.textContent = "Posting...";
+  try {
+    let imageUrl = "", videoUrl = "";
+    const file = mediaInput.files[0];
+    if (file) {
+      const url = await uploadToCloudinary(file);
+      if (file.type.startsWith("image")) imageUrl = url;
+      if (file.type.startsWith("video")) videoUrl = url;
+    }
+    await addDoc(collection(db, "posts"), {
+      text, uid: currentUser.uid,
+      displayName: currentUserData.displayName,
+      username: currentUserData.username,
+      initials: currentUserData.initials,
+      photoURL: currentUserData.photoURL || "",
+      likes: [], comments: [], imageUrl, videoUrl,
+      createdAt: serverTimestamp()
+    });
+    postInput.value = ""; mediaInput.value = "";
+  } catch (err) { alert(err.message); }
+  postBtn.disabled = false; postBtn.textContent = "Post";
+});
 
-  pointer-events:none;
-  z-index:0;
+// ── REALTIME FEED ───────────────────────────────────
+let unsubFeed = null;
+function loadFeedRealtime() {
+  if (unsubFeed) unsubFeed();
+  feedEl.innerHTML = `<div style="padding:40px;text-align:center;color:#64748b;">Loading...</div>`;
 
-  background-image:
-    linear-gradient(rgba(34,211,238,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(34,211,238,0.03) 1px, transparent 1px);
-
-  background-size:60px 60px;
-}
-
-/* ======================
-   LAYOUT
-====================== */
-
-.container{
-  position:relative;
-  z-index:1;
-
-  display:flex;
-
-  min-height:100vh;
-}
-
-/* ======================
-   LEFT
-====================== */
-
-.left{
-  flex:1.1;
-
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-
-  padding:80px 72px;
-
-  border-right:1px solid var(--border);
-}
-
-.brand-tag{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-
-  width:fit-content;
-
-  background:rgba(34,211,238,0.08);
-
-  border:1px solid rgba(34,211,238,0.18);
-
-  border-radius:999px;
-
-  padding:7px 14px;
-
-  font-size:12px;
-  font-weight:700;
-
-  color:var(--cyan);
-
-  letter-spacing:.05em;
-  text-transform:uppercase;
-
-  margin-bottom:28px;
-}
-
-.brand-tag-dot{
-  width:7px;
-  height:7px;
-
-  border-radius:50%;
-
-  background:var(--cyan);
-
-  animation:pulse-dot 2s ease infinite;
-}
-
-@keyframes pulse-dot{
-  0%,100%{
-    opacity:1;
-    transform:scale(1);
+  let q;
+  if (currentTab === "following" && currentUserData?.following?.length) {
+    q = query(collection(db,"posts"), where("uid","in", currentUserData.following.slice(0,10)), orderBy("createdAt","desc"));
+  } else {
+    q = query(collection(db,"posts"), orderBy("createdAt","desc"), limit(50));
   }
 
-  50%{
-    opacity:.5;
-    transform:scale(.7);
+  unsubFeed = onSnapshot(q, (snapshot) => {
+    feedEl.innerHTML = "";
+    if (snapshot.empty) {
+      feedEl.innerHTML = `<div style="padding:40px;text-align:center;color:#64748b;">No posts yet. Be the first!</div>`;
+      return;
+    }
+    snapshot.forEach((docSnap) => renderPost(docSnap));
+  });
+}
+
+// ── RENDER POST ─────────────────────────────────────
+function renderPost(docSnap) {
+  const post = docSnap.data();
+  const id   = docSnap.id;
+  const liked = (post.likes||[]).includes(currentUser.uid);
+  const likeCount = (post.likes||[]).length;
+  const comments  = post.comments || [];
+  const time = post.createdAt
+    ? new Date(post.createdAt.seconds*1000).toLocaleString()
+    : "Just now";
+
+  const el = document.createElement("div");
+  el.className = "post";
+  el.innerHTML = `
+    <div class="post-header">
+      <div class="post-avatar">
+        ${post.photoURL ? `<img src="${post.photoURL}" class="post-avatar-img">` : (post.initials||"?")}
+      </div>
+      <div>
+        <div class="post-name">
+          <a href="profile.html?uid=${post.uid}" class="profile-link">${post.displayName}</a>
+        </div>
+        <div class="post-username">@${post.username} · ${time}</div>
+      </div>
+    </div>
+    <div class="post-text">${post.text||""}</div>
+    ${post.imageUrl ? `<img src="${post.imageUrl}" class="post-image">` : ""}
+    ${post.videoUrl ? `<video src="${post.videoUrl}" class="post-video" controls></video>` : ""}
+    <div class="post-actions">
+      <button class="like-btn ${liked?"liked":""}">
+        ${liked?"❤️":"🤍"} ${likeCount}
+      </button>
+    </div>
+    <div class="comments-section">
+      <div class="comments-list">
+        ${comments.map(c=>`
+          <div class="comment"><b>@${c.username}</b> ${c.text}</div>
+        `).join("")}
+      </div>
+      <div class="comment-input-wrap">
+        <input type="text" class="comment-input" placeholder="Write a comment...">
+        <button class="comment-btn">Post</button>
+      </div>
+    </div>
+  `;
+
+  el.querySelector(".like-btn").onclick = () => toggleLike(id, post);
+  const commentInput = el.querySelector(".comment-input");
+  el.querySelector(".comment-btn").onclick = async () => {
+    const text = commentInput.value.trim();
+    if (!text) return;
+    await addComment(id, text, post);
+    commentInput.value = "";
+  };
+
+  feedEl.appendChild(el);
+}
+
+// ── LIKE ────────────────────────────────────────────
+async function toggleLike(postId, post) {
+  const ref = doc(db, "posts", postId);
+  const liked = (post.likes||[]).includes(currentUser.uid);
+  await updateDoc(ref, {
+    likes: liked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+  });
+  // Write notification if liking someone else's post
+  if (!liked && post.uid !== currentUser.uid) {
+    await addDoc(collection(db,"notifications"), {
+      toUid: post.uid,
+      fromUid: currentUser.uid,
+      fromName: currentUserData.displayName,
+      fromUsername: currentUserData.username,
+      fromPhoto: currentUserData.photoURL || "",
+      type: "like",
+      postId,
+      postText: post.text?.slice(0,60) || "",
+      read: false,
+      createdAt: serverTimestamp()
+    });
   }
 }
 
-.brand-logo{
-  font-family:'Syne',sans-serif;
+// ── COMMENT ─────────────────────────────────────────
+async function addComment(postId, text, post) {
+  const ref = doc(db,"posts",postId);
+  await updateDoc(ref, {
+    comments: arrayUnion({ uid:currentUser.uid, username:currentUserData.username, text })
+  });
+  if (post.uid !== currentUser.uid) {
+    await addDoc(collection(db,"notifications"), {
+      toUid: post.uid,
+      fromUid: currentUser.uid,
+      fromName: currentUserData.displayName,
+      fromUsername: currentUserData.username,
+      fromPhoto: currentUserData.photoURL || "",
+      type: "comment",
+      postId,
+      postText: post.text?.slice(0,60) || "",
+      commentText: text,
+      read: false,
+      createdAt: serverTimestamp()
+    });
+  }
+}
 
-  font-size:72px;
-  font-weight:800;
-  line-height:1;
-
-  margin-bottom:24px;
-
-  background:linear-gradient(
-    135deg,
-    #fff 0%,
-    var(--cyan) 60%,
-    var(--blue) 100%
+// ── NOTIFICATION BADGE ───────────────────────────────
+function watchNotifBadge() {
+  const q = query(
+    collection(db,"notifications"),
+    where("toUid","==",currentUser.uid),
+    where("read","==",false)
   );
-
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-  background-clip:text;
-
-  display:inline-block;
-  max-width:100%;
-
-  letter-spacing:-1px;
+  onSnapshot(q, (snap) => {
+    const count = snap.size;
+    notifBadge.textContent = count > 9 ? "9+" : count;
+    notifBadge.classList.toggle("show", count > 0);
+  });
 }
 
-.brand-tagline{
-  max-width:500px;
-
-  font-size:20px;
-  line-height:1.7;
-
-  color:var(--muted2);
-
-  margin-bottom:48px;
-}
-
-.brand-tagline b{
-  color:var(--text);
-}
-
-/* FEATURES */
-
-.features{
-  display:flex;
-  flex-direction:column;
-  gap:16px;
-}
-
-.feature-item{
-  display:flex;
-  align-items:flex-start;
-  gap:14px;
-}
-
-.feature-icon{
-  width:42px;
-  height:42px;
-
-  border-radius:14px;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  flex-shrink:0;
-
-  background:rgba(34,211,238,0.08);
-
-  border:1px solid rgba(34,211,238,0.15);
-
-  font-size:18px;
-}
-
-.feature-text{
-  color:var(--muted2);
-
-  font-size:15px;
-  line-height:1.5;
-}
-
-.feature-text b{
-  color:var(--text);
-}
-
-/* STATS */
-
-.stats-row{
-  display:flex;
-  gap:40px;
-
-  margin-top:56px;
-  padding-top:34px;
-
-  border-top:1px solid var(--border);
-}
-
-.stat-num{
-  font-family:'Syne',sans-serif;
-
-  font-size:30px;
-  font-weight:800;
-
-  color:var(--cyan);
-}
-
-.stat-label{
-  font-size:13px;
-  color:var(--muted);
-
-  margin-top:3px;
-}
-
-/* ======================
-   RIGHT
-====================== */
-
-.right{
-  flex:.9;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  padding:60px 48px;
-}
-
-.auth-box{
-  width:100%;
-  max-width:430px;
-
-  padding:34px;
-
-  border-radius:28px;
-
-  background:rgba(11,18,32,.78);
-
-  border:1px solid rgba(255,255,255,.06);
-
-  backdrop-filter:blur(18px);
-
-  box-shadow:0 10px 40px rgba(0,0,0,.35);
-}
-
-.auth-title{
-  font-family:'Syne',sans-serif;
-
-  font-size:32px;
-  font-weight:800;
-
-  margin-bottom:8px;
-}
-
-.auth-sub{
-  color:var(--muted);
-
-  font-size:14px;
-  line-height:1.6;
-
-  margin-bottom:30px;
-}
-
-/* TABS */
-
-.tabs{
-  display:flex;
-  gap:4px;
-
-  background:var(--bg3);
-
-  border:1px solid var(--border);
-
-  border-radius:16px;
-
-  padding:4px;
-
-  margin-bottom:26px;
-}
-
-.tab{
-  flex:1;
-
-  border:none;
-  outline:none;
-
-  background:none;
-
-  color:var(--muted);
-
-  padding:12px;
-
-  border-radius:12px;
-
-  font-size:14px;
-  font-weight:700;
-
-  cursor:pointer;
-
-  transition:.2s ease;
-}
-
-.tab.active{
-  background:var(--bg2);
-
-  color:var(--text);
-
-  box-shadow:0 2px 12px rgba(0,0,0,.25);
-}
-
-/* PANELS */
-
-.panel{
-  display:none;
-}
-
-.panel.active{
-  display:block;
-}
-
-/* BUTTONS */
-
-.google-btn{
-  width:100%;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-
-  padding:14px 16px;
-
-  border-radius:16px;
-
-  border:1px solid var(--border2);
-
-  background:rgba(255,255,255,.04);
-
-  color:var(--text);
-
-  font-size:15px;
-  font-weight:700;
-
-  cursor:pointer;
-
-  transition:.2s ease;
-
-  margin-bottom:20px;
-}
-
-.google-btn:hover{
-  background:rgba(255,255,255,.07);
-
-  transform:translateY(-2px);
-}
-
-.primary-btn{
-  width:100%;
-
-  border:none;
-
-  padding:15px;
-
-  border-radius:16px;
-
-  margin-top:6px;
-
-  background:linear-gradient(
-    135deg,
-    var(--cyan) 0%,
-    var(--blue) 100%
+// ── MESSAGE BADGE ────────────────────────────────────
+function watchMsgBadge() {
+  const q = query(
+    collection(db,"messages"),
+    where("toUid","==",currentUser.uid),
+    where("read","==",false)
   );
-
-  color:white;
-
-  font-size:15px;
-  font-weight:700;
-
-  cursor:pointer;
-
-  transition:.25s ease;
+  onSnapshot(q, (snap) => {
+    const count = snap.size;
+    msgBadge.textContent = count > 9 ? "9+" : count;
+    msgBadge.classList.toggle("show", count > 0);
+  });
 }
 
-.primary-btn:hover{
-  transform:translateY(-2px);
-
-  box-shadow:0 10px 28px rgba(34,211,238,.25);
-}
-
-/* DIVIDER */
-
-.divider{
-  display:flex;
-  align-items:center;
-  gap:12px;
-
-  color:var(--muted);
-
-  font-size:13px;
-
-  margin:0 0 20px;
-}
-
-.divider::before,
-.divider::after{
-  content:'';
-
-  flex:1;
-  height:1px;
-
-  background:var(--border);
-}
-
-/* INPUTS */
-
-.input-box{
-  margin-bottom:14px;
-}
-
-.input-box input{
-  width:100%;
-
-  padding:15px 16px;
-
-  border-radius:16px;
-
-  border:1px solid var(--border);
-
-  background:rgba(15,23,42,.7);
-
-  color:var(--text);
-
-  font-size:15px;
-
-  outline:none;
-
-  transition:.22s ease;
-}
-
-.input-box input::placeholder{
-  color:var(--muted);
-}
-
-.input-box input:focus{
-  border-color:var(--cyan);
-
-  background:rgba(34,211,238,.04);
-
-  box-shadow:0 0 0 3px rgba(34,211,238,.08);
-}
-
-/* TERMS */
-
-.auth-terms{
-  text-align:center;
-
-  font-size:12px;
-  line-height:1.7;
-
-  color:var(--muted);
-
-  margin-top:20px;
-}
-
-.auth-terms a{
-  color:var(--cyan);
-  text-decoration:none;
-}
-
-/* ======================
-   MOBILE
-====================== */
-
-@media(max-width:1000px){
-
-  .container{
-    flex-direction:column;
-  }
-
-  .left{
-    border-right:none;
-    border-bottom:1px solid var(--border);
-
-    padding:60px 28px 42px;
-  }
-
-  .right{
-    padding:40px 18px 50px;
-  }
-
-  .brand-logo{
-    font-size:54px;
-  }
-
-}
-
-@media(max-width:480px){
-
-  .left{
-    padding:42px 18px 34px;
-  }
-
-  .right{
-    padding:24px 14px 40px;
-  }
-
-  .brand-logo{
-    font-size:34px;
-  }
-
-  .brand-tagline{
-    font-size:15px;
-  }
-
-  .auth-box{
-    padding:22px 18px;
-    border-radius:22px;
-  }
-
-  .stats-row{
-    gap:20px;
-    flex-wrap:wrap;
-  }
-
-  .stat-num{
-    font-size:24px;
-  }
-
-}
-
-</style>
-</head>
-
-<body>
-
-<div class="grid-lines"></div>
-<div class="bg-mesh"></div>
-
-<div class="container">
-
-  <!-- LEFT -->
-
-  <div class="left">
-
-    <div class="brand-tag">
-      <span class="brand-tag-dot"></span>
-      Now in beta · Join infinite founders
-    </div>
-
-    <div class="brand-logo">
-      NexFounder
-    </div>
-
-    <p class="brand-tagline">
-      The platform where <b>ambitious founders</b> meet, connect, and build the next generation of startups — together.
-    </p>
-
-    <div class="features">
-
-      <div class="feature-item">
-        <div class="feature-icon">🤝</div>
-
-        <div class="feature-text">
-          <b>Smart Matching</b> · Find co-founders by skills & vision
-        </div>
-      </div>
-
-      <div class="feature-item">
-        <div class="feature-icon">⚡</div>
-
-        <div class="feature-text">
-          <b>Live Feed</b> · Share milestones, get feedback instantly
-        </div>
-      </div>
-
-      <div class="feature-item">
-        <div class="feature-icon">💬</div>
-
-        <div class="feature-text">
-          <b>Direct Messages</b> · Pitch ideas in private conversations
-        </div>
-      </div>
-
-      <div class="feature-item">
-        <div class="feature-icon">🚀</div>
-
-        <div class="feature-text">
-          <b>Startup Showcase</b> · Launch your idea to the community
-        </div>
-      </div>
-
-    </div>
-
-    <div class="stats-row">
-
-      <div class="stat-item">
-        <div class="stat-num">∞</div>
-        <div class="stat-label">Founders</div>
-      </div>
-
-      <div class="stat-item">
-        <div class="stat-num">∞</div>
-        <div class="stat-label">Updates</div>
-      </div>
-
-      <div class="stat-item">
-        <div class="stat-num">24/7</div>
-        <div class="stat-label">Online</div>
-      </div>
-
-    </div>
-
-  </div>
-
-  <!-- RIGHT -->
-
-  <div class="right">
-
-    <div class="auth-box">
-
-      <div class="auth-title">
-        Welcome back 👋
-      </div>
-
-      <div class="auth-sub">
-        Sign in to continue building your future
-      </div>
-
-      <div class="tabs">
-
-        <button class="tab active" onclick="switchTab('login')">
-          Login
-        </button>
-
-        <button class="tab" onclick="switchTab('signup')">
-          Sign Up
-        </button>
-
-      </div>
-
-      <!-- LOGIN -->
-
-      <div class="panel active" id="loginPanel">
-
-        <button class="google-btn" onclick="googleLogin()">
-
-          <svg width="18" height="18" viewBox="0 0 48 48">
-            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/>
-            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/>
-            <path fill="#FBBC05" d="M10.6 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6z"/>
-            <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.5 14.7 48 24 48z"/>
-          </svg>
-
-          Continue with Google
-
-        </button>
-
-        <div class="divider">
-          or continue with email
-        </div>
-
-        <div class="input-box">
-          <input type="email" id="emailInput" placeholder="Email address">
-        </div>
-
-        <div class="input-box">
-          <input type="password" id="passwordInput" placeholder="Password">
-        </div>
-
-        <button class="primary-btn" onclick="emailLogin()">
-          Sign In →
-        </button>
-
-      </div>
-
-      <!-- SIGNUP -->
-
-      <div class="panel" id="signupPanel">
-
-        <button class="google-btn" onclick="googleLogin()">
-
-          <svg width="18" height="18" viewBox="0 0 48 48">
-            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.5 30.2 0 24 0 14.7 0 6.7 5.4 2.8 13.3l7.8 6C12.4 13 17.8 9.5 24 9.5z"/>
-            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/>
-            <path fill="#FBBC05" d="M10.6 28.7A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.9-4.7l-7.8-6A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l8-6z"/>
-            <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.2-7.7 2.2-6.2 0-11.5-4.2-13.4-9.9l-8 6.2C6.6 42.5 14.7 48 24 48z"/>
-          </svg>
-
-          Sign up with Google
-
-        </button>
-
-        <div class="divider">
-          or sign up with email
-        </div>
-
-        <div class="input-box">
-          <input type="text" id="signupName" placeholder="Full Name">
-        </div>
-
-        <div class="input-box">
-          <input type="email" id="signupEmail" placeholder="Email address">
-        </div>
-
-        <div class="input-box">
-          <input type="password" id="signupPassword" placeholder="Password (min 6 chars)">
-        </div>
-
-        <button class="primary-btn" onclick="signup()">
-          Create Account →
-        </button>
-
-      </div>
-
-      <div class="auth-terms">
-        By continuing, you agree to our
-        <a href="#">Terms</a>
-        and
-        <a href="#">Privacy Policy</a>
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-<script>
-
-function switchTab(tab){
-
-  document.querySelectorAll('.tab').forEach((t, i) => {
-
-    t.classList.toggle(
-      'active',
-      (i===0 && tab==='login') ||
-      (i===1 && tab==='signup')
-    );
-
+// ── SEARCH ───────────────────────────────────────────
+searchInput.addEventListener("input", async () => {
+  const qText = searchInput.value.trim().toLowerCase();
+  searchResults.innerHTML = "";
+  if (!qText) { searchResults.style.display="none"; return; }
+
+  const snap = await getDocs(collection(db,"users"));
+  const matches = [];
+  snap.forEach((d) => {
+    const u = d.data();
+    if (u.displayName?.toLowerCase().includes(qText) || u.username?.toLowerCase().includes(qText)) {
+      matches.push({ id:d.id, ...u });
+    }
   });
 
-  document.getElementById('loginPanel')
-    .classList.toggle('active', tab==='login');
+  if (!matches.length) { searchResults.style.display="none"; return; }
+  searchResults.style.display = "block";
+  matches.forEach((u) => {
+    const el = document.createElement("div");
+    el.className = "search-result";
+    el.innerHTML = `
+      <div class="search-avatar">
+        ${u.photoURL ? `<img src="${u.photoURL}" class="post-avatar-img">` : (u.initials||"?")}
+      </div>
+      <div>
+        <div style="font-weight:600">${u.displayName}</div>
+        <div style="color:#64748b;font-size:13px">@${u.username}</div>
+      </div>
+    `;
+    el.onclick = () => { location.href=`profile.html?uid=${u.id}`; };
+    searchResults.appendChild(el);
+  });
+});
 
-  document.getElementById('signupPanel')
-    .classList.toggle('active', tab==='signup');
-
-  document.querySelector('.auth-title').textContent =
-    tab==='login'
-      ? 'Welcome back 👋'
-      : 'Join NexFounder 🚀';
-
-  document.querySelector('.auth-sub').textContent =
-    tab==='login'
-      ? 'Sign in to continue building your future'
-      : 'Create your account and find your co-founder';
-
-}
-
-</script>
-
-<script type="module" src="app.js"></script>
-<script type="module" src="signup.js"></script>
-
-</body>
-</html>
+document.addEventListener("click", (e) => {
+  if (!searchInput.contains(e.target) && !searchResults.contains(e.target))
+    searchResults.style.display="none";
+});
