@@ -1,807 +1,303 @@
 import { auth, db } from "./firebase.js";
-
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  updateDoc,
-  writeBatch,
-  query,
-  orderBy,
-  onSnapshot,
-  where,
-  addDoc,
-  arrayUnion,
-  arrayRemove,
-  serverTimestamp
+  doc, getDoc, setDoc, updateDoc, collection,
+  query, where, orderBy, arrayUnion, arrayRemove,
+  onSnapshot, addDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* STATE */
-let currentUser = null;
-let currentUserData = null;
+const CLOUD_NAME    = "dr5uatib5";
+const UPLOAD_PRESET = "nexfounder_upload";
 
-let notifUnsub = null;
-let notifBadgeUnsub = null;
-let msgBadgeUnsub = null;
+let currentUser, profileData, targetUid, isOwnProfile;
 
-/* DOM */
-const notifList =
-  document.getElementById("notifList");
+// DOM refs
+const avatar         = document.getElementById("avatar");
+const banner         = document.getElementById("banner");
+const avatarInput    = document.getElementById("avatarInput");
+const bannerInput    = document.getElementById("bannerInput");
+const avatarEditBtn  = document.getElementById("avatarEditBtn");
+const bannerEditBtn  = document.getElementById("bannerEditBtn");
+const displayName    = document.getElementById("displayName");
+const displayUsername= document.getElementById("displayUsername");
+const displayBio     = document.getElementById("displayBio");
+const displayEmail   = document.getElementById("displayEmail");
+const followersCount = document.getElementById("followersCount");
+const followingCount = document.getElementById("followingCount");
+const connectionsCount = document.getElementById("connectionsCount");
+const openEditBtn    = document.getElementById("openEditBtn");
+const connectBtn     = document.getElementById("connectBtn");
+const messageBtn     = document.getElementById("messageBtn");
+const editModal      = document.getElementById("editModal");
+const cancelBtn      = document.getElementById("cancelBtn");
+const saveBtn        = document.getElementById("saveBtn");
+const inputName      = document.getElementById("inputName");
+const inputUsername  = document.getElementById("inputUsername");
+const inputBio       = document.getElementById("inputBio");
+const postsContainer = document.getElementById("userPosts");
 
-const markAllBtn =
-  document.getElementById("markAllBtn");
-
-const notifBadge =
-  document.getElementById("notifBadge");
-
-const msgBadge =
-  document.getElementById("msgBadge");
-
-/* AUTH */
-onAuthStateChanged(auth, async(user)=>{
-
-  if(!user){
-
-    location.href =
-      "index.html";
-
-    return;
-
-  }
-
+// ── AUTH ─────────────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  if (!user) { location.href="index.html"; return; }
   currentUser = user;
 
-  try{
+  const params = new URLSearchParams(location.search);
+  targetUid = params.get("uid") || user.uid;
+  isOwnProfile = targetUid === user.uid;
 
-    const snap =
-      await getDoc(
-        doc(
-          db,
-          "users",
-          user.uid
-        )
-      );
+  const userRef = doc(db,"users",targetUid);
+  const snap    = await getDoc(userRef);
 
-    if(snap.exists()){
-
-      currentUserData =
-        snap.data();
-
-      setNavAvatar();
-
-    }
-
-    loadNotifications();
-
-    watchBadges();
-
-  }catch(error){
-
-    console.error(error);
-
+  if (!snap.exists()) {
+    const name = user.email.split("@")[0];
+    profileData = {
+      displayName:name, username:name, bio:"", initials:initials(name),
+      followers:[], following:[], connections:[], pendingConnections:[], sentConnections:[],
+      email:user.email, photoURL:"", bannerURL:""
+    };
+    await setDoc(userRef, profileData);
   }
 
+  onSnapshot(userRef, (ds) => {
+    if (!ds.exists()) return;
+    profileData = ds.data();
+    renderProfile();
+  });
+
+  loadPostsRealtime();
 });
 
-/* HELPERS */
-function escapeHTML(str){
-
-  if(!str) return "";
-
-  return str
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-
+// ── UPLOAD ───────────────────────────────────────────
+async function uploadToCloudinary(file) {
+  const fd = new FormData();
+  fd.append("file",file); fd.append("upload_preset",UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,{method:"POST",body:fd});
+  return (await res.json()).secure_url;
 }
 
-function timeAgo(ms){
+// ── RENDER PROFILE ───────────────────────────────────
+function renderProfile() {
+  profileData.followers   = profileData.followers   || [];
+  profileData.following   = profileData.following   || [];
+  profileData.connections = profileData.connections || [];
+  profileData.pendingConnections = profileData.pendingConnections || [];
+  profileData.sentConnections    = profileData.sentConnections    || [];
 
-  const diff =
-    Date.now() - ms;
+  displayName.textContent    = profileData.displayName || "Unknown";
+  displayUsername.textContent= "@" + (profileData.username||"user");
+  displayBio.textContent     = profileData.bio || "";
+  displayEmail.textContent   = profileData.email || "";
+  followersCount.textContent = profileData.followers.length;
+  followingCount.textContent = profileData.following.length;
+  connectionsCount.textContent = profileData.connections.length;
 
-  const m =
-    Math.floor(diff/60000);
-
-  if(m < 1)
-    return "just now";
-
-  if(m < 60)
-    return `${m}m ago`;
-
-  const h =
-    Math.floor(m/60);
-
-  if(h < 24)
-    return `${h}h ago`;
-
-  return `${Math.floor(h/24)}d ago`;
-
-}
-
-/* NAV */
-function setNavAvatar(){
-
-  const el =
-    document.getElementById(
-      "navAvatar"
-    );
-
-  document.getElementById(
-    "navName"
-  ).textContent =
-    currentUserData
-      ?.displayName || "You";
-
-  if(currentUserData?.photoURL){
-
-    el.innerHTML = `
-
-      <img
-      src="${currentUserData.photoURL}"
-      style="
-        width:100%;
-        height:100%;
-        object-fit:cover;
-        border-radius:50%;
-      ">
-
-    `;
-
-  }else{
-
-    el.textContent =
-      currentUserData
-        ?.initials || "?";
-
+  // Avatar
+  if (profileData.photoURL) {
+    avatar.style.backgroundImage = `url(${profileData.photoURL})`;
+    avatar.style.backgroundSize  = "cover";
+    avatar.style.backgroundPosition = "center";
+    avatar.childNodes.forEach(n => { if(n.tagName!=="BUTTON") n.remove(); });
+  } else {
+    avatar.style.backgroundImage = "";
+    const txt = avatar.querySelector("span") || document.createElement("span");
+    txt.textContent = initials(profileData.displayName);
+    if(!avatar.querySelector("span")) avatar.prepend(txt);
   }
 
-}
+  // Banner
+  if (profileData.bannerURL) {
+    banner.style.backgroundImage = `url(${profileData.bannerURL})`;
+    banner.style.backgroundSize  = "cover";
+    banner.style.backgroundPosition = "center";
+  }
 
-/* LOAD NOTIFICATIONS */
-function loadNotifications(){
+  if (isOwnProfile) {
+    openEditBtn.style.display   = "inline-flex";
+    connectBtn.style.display    = "none";
+    messageBtn.style.display    = "none";
+    avatarEditBtn.style.display = "flex";
+    bannerEditBtn.style.display = "block";
+  } else {
+    openEditBtn.style.display   = "none";
+    messageBtn.style.display    = "inline-flex";
+    avatarEditBtn.style.display = "none";
+    bannerEditBtn.style.display = "none";
 
-  const q = query(
-    collection(
-      db,
-      "notifications"
-    ),
-    where(
-      "toUid",
-      "==",
-      currentUser.uid
-    ),
-    orderBy(
-      "createdAt",
-      "desc"
-    )
-  );
+    // Determine connect state
+    const isConnected = profileData.connections.includes(currentUser.uid);
+    const isPending   = profileData.pendingConnections.includes(currentUser.uid); // they sent to me (on this profile's doc)
 
-  notifUnsub =
-    onSnapshot(q,(snap)=>{
+    // I need MY data to know if I sent a request
+    getDoc(doc(db,"users",currentUser.uid)).then(mySnap => {
+      const myData = mySnap.data() || {};
+      const iSent  = (myData.sentConnections||[]).includes(targetUid);
+      const theyRequested = (myData.pendingConnections||[]).includes(targetUid);
 
-      notifList.innerHTML = "";
+      connectBtn.style.display = "inline-flex";
+      connectBtn.className = "connectbtn";
 
-      if(snap.empty){
-
-        notifList.innerHTML = `
-
-          <div class="empty-state">
-
-            <div>🔔</div>
-
-            No notifications yet
-
-          </div>
-
-        `;
-
-        return;
-
+      if (isConnected) {
+        connectBtn.textContent = "✓ Connected";
+        connectBtn.classList.add("connected");
+      } else if (iSent) {
+        connectBtn.textContent = "Request Sent";
+        connectBtn.classList.add("pending");
+      } else if (theyRequested) {
+        connectBtn.textContent = "Accept Request";
+        connectBtn.classList.add("accept");
+      } else {
+        connectBtn.textContent = "Connect";
+        connectBtn.classList.add("default");
       }
-
-      snap.forEach((d)=>{
-
-        renderNotif(d);
-
-      });
-
     });
-
+  }
 }
 
-/* RENDER */
-function renderNotif(docSnap){
+// ── FILE PICKERS ─────────────────────────────────────
+avatar.addEventListener("click", () => { if (isOwnProfile) avatarInput.click(); });
+banner.addEventListener("click", () => { if (isOwnProfile) bannerInput.click(); });
+avatarEditBtn.onclick = (e) => { e.stopPropagation(); avatarInput.click(); };
+bannerEditBtn.onclick = (e) => { e.stopPropagation(); bannerInput.click(); };
 
-  const n =
-    docSnap.data();
+avatarInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  avatar.style.opacity="0.5";
+  try {
+    const url = await uploadToCloudinary(file);
+    await updateDoc(doc(db,"users",currentUser.uid), { photoURL:url });
+  } catch { alert("Failed to upload photo"); }
+  avatar.style.opacity="1";
+});
 
-  const id =
-    docSnap.id;
+bannerInput.addEventListener("change", async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  banner.style.opacity="0.6";
+  try {
+    const url = await uploadToCloudinary(file);
+    await updateDoc(doc(db,"users",currentUser.uid), { bannerURL:url });
+  } catch { alert("Failed to upload banner"); }
+  banner.style.opacity="1";
+});
 
-  const time =
-    n.createdAt
-    ? timeAgo(
-        n.createdAt.seconds * 1000
-      )
-    : "";
+// ── CONNECT ──────────────────────────────────────────
+connectBtn.onclick = async () => {
+  const myRef     = doc(db,"users",currentUser.uid);
+  const targetRef = doc(db,"users",targetUid);
+  const mySnap    = await getDoc(myRef);
+  const myData    = mySnap.data()||{};
 
-  const iconMap = {
+  const isConnected   = (profileData.connections||[]).includes(currentUser.uid);
+  const iSent         = (myData.sentConnections||[]).includes(targetUid);
+  const theyRequested = (myData.pendingConnections||[]).includes(targetUid);
 
-    like:"❤️",
+  connectBtn.disabled = true;
 
-    comment:"💬",
+  if (isConnected) {
+    // Disconnect
+    await updateDoc(myRef,     { connections: arrayRemove(targetUid) });
+    await updateDoc(targetRef, { connections: arrayRemove(currentUser.uid) });
+  } else if (iSent) {
+    // Cancel request
+    await updateDoc(myRef,     { sentConnections:    arrayRemove(targetUid) });
+    await updateDoc(targetRef, { pendingConnections: arrayRemove(currentUser.uid) });
+  } else if (theyRequested) {
+    // Accept
+    await updateDoc(myRef, {
+      pendingConnections: arrayRemove(targetUid),
+      connections: arrayUnion(targetUid)
+    });
+    await updateDoc(targetRef, {
+      sentConnections: arrayRemove(currentUser.uid),
+      connections: arrayUnion(currentUser.uid)
+    });
+    await addDoc(collection(db,"notifications"), {
+      toUid: targetUid,
+      fromUid: currentUser.uid,
+      fromName: profileData.displayName,
+      fromUsername: profileData.username,
+      fromPhoto: profileData.photoURL||"",
+      type:"connect_accepted", read:false, createdAt:serverTimestamp()
+    });
+  } else {
+    // Send request
+    await updateDoc(myRef,     { sentConnections:    arrayUnion(targetUid) });
+    await updateDoc(targetRef, { pendingConnections: arrayUnion(currentUser.uid) });
+    const meSnap = await getDoc(myRef);
+    const me = meSnap.data()||{};
+    await addDoc(collection(db,"notifications"), {
+      toUid: targetUid,
+      fromUid: currentUser.uid,
+      fromName: me.displayName,
+      fromUsername: me.username,
+      fromPhoto: me.photoURL||"",
+      type:"connect_request", read:false, createdAt:serverTimestamp()
+    });
+  }
+  connectBtn.disabled = false;
+};
 
-    connect_request:"🤝",
+// ── MESSAGE BUTTON ───────────────────────────────────
+messageBtn.onclick = () => {
+  location.href = `messages.html?uid=${targetUid}`;
+};
 
-    connect_accepted:"✅",
+// ── EDIT PROFILE ─────────────────────────────────────
+openEditBtn.onclick = () => {
+  inputName.value = profileData.displayName||"";
+  inputUsername.value = profileData.username||"";
+  inputBio.value = profileData.bio||"";
+  editModal.classList.add("open");
+};
+cancelBtn.onclick = () => editModal.classList.remove("open");
+saveBtn.onclick = async () => {
+  const name = inputName.value.trim();
+  const username = inputUsername.value.trim();
+  const bio = inputBio.value.trim();
+  if (!name||!username) { alert("Fill required fields"); return; }
+  saveBtn.disabled=true; saveBtn.textContent="Saving...";
+  try {
+    await updateDoc(doc(db,"users",currentUser.uid), { displayName:name, username, bio, initials:initials(name) });
+    editModal.classList.remove("open");
+  } catch { alert("Update failed"); }
+  saveBtn.disabled=false; saveBtn.textContent="Save";
+};
 
-    follow:"👤"
+// ── POSTS ─────────────────────────────────────────────
+function loadPostsRealtime() {
+  const q = query(
+    collection(db,"posts"),
+    where("uid","==",targetUid),
+    orderBy("createdAt","desc")
+  );
+  onSnapshot(q, (snapshot) => {
+    if (snapshot.empty) { postsContainer.innerHTML=`<div class="empty">No posts yet</div>`; return; }
+    postsContainer.innerHTML="";
+    snapshot.forEach(ds => renderPost(ds.data()));
+  });
+}
 
-  };
-
-  const textMap = {
-
-    like:
-      `<b>${escapeHTML(n.fromName)}</b> liked your post`,
-
-    comment:
-      `<b>${escapeHTML(n.fromName)}</b> commented on your post`,
-
-    connect_request:
-      `<b>${escapeHTML(n.fromName)}</b> sent you a connection request`,
-
-    connect_accepted:
-      `<b>${escapeHTML(n.fromName)}</b> accepted your connection request`,
-
-    follow:
-      `<b>${escapeHTML(n.fromName)}</b> started following you`
-
-  };
-
-  const el =
-    document.createElement(
-      "div"
-    );
-
-  el.className =
-    `notif-item ${
-      n.read
-      ? ""
-      : "unread"
-    }`;
-
-  el.innerHTML = `
-
-    <div class="notif-avatar">
-
-      ${
-        n.fromPhoto
-        ? `<img src="${n.fromPhoto}">`
-        : escapeHTML(
-            n.fromName
-            ?.slice(0,2) || "?"
-          )
-      }
-
-    </div>
-
-    <div class="notif-body">
-
-      <div class="notif-text">
-
-        ${
-          textMap[n.type]
-          || escapeHTML(n.type)
-        }
-
+function renderPost(post) {
+  const div = document.createElement("div");
+  div.innerHTML = `
+    <div style="background:#0f172a;border:1px solid #1e293b;border-radius:20px;padding:18px;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:46px;height:46px;border-radius:50%;background:${post.photoURL?`url(${post.photoURL}) center/cover`:"#2563eb"};display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden;">
+          ${post.photoURL?"":profileData?.initials||"?"}
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:15px">${profileData?.displayName||""}</div>
+          <div style="color:#64748b;font-size:13px">@${profileData?.username||""} · ${post.createdAt?new Date(post.createdAt.seconds*1000).toLocaleDateString():""}</div>
+        </div>
       </div>
-
-      ${
-        n.postText
-        ? `
-
-        <div class="notif-subtext">
-
-          "${escapeHTML(
-            n.postText.slice(0,80)
-          )}"
-
-        </div>
-
-        `
-        : ""
-      }
-
-      ${
-        n.commentText
-        ? `
-
-        <div class="notif-subtext">
-
-          Comment:
-          "${escapeHTML(
-            n.commentText.slice(0,80)
-          )}"
-
-        </div>
-
-        `
-        : ""
-      }
-
-      <div class="notif-time">
-
-        ${time}
-
-      </div>
-
-      ${
-        n.type ===
-        "connect_request"
-
-        ?
-
-        `
-
-        <div class="accept-row">
-
-          <button
-          class="accept-btn">
-
-            Accept
-
-          </button>
-
-          <button
-          class="decline-btn">
-
-            Decline
-
-          </button>
-
-        </div>
-
-        `
-
-        : ""
-      }
-
+      <div style="color:#e2e8f0;line-height:1.6;font-size:15px">${post.text||""}</div>
+      ${post.imageUrl?`<img src="${post.imageUrl}" style="width:100%;margin-top:14px;border-radius:16px;border:1px solid #1e293b;max-height:500px;object-fit:cover;">` :""}
+      ${post.videoUrl?`<video src="${post.videoUrl}" controls style="width:100%;margin-top:14px;border-radius:16px;border:1px solid #1e293b;"></video>`:""}
+      <div style="margin-top:12px;color:#64748b;font-size:13px">❤️ ${post.likes?.length||0} &nbsp; 💬 ${post.comments?.length||0}</div>
     </div>
-
-    <div class="notif-icon">
-
-      ${
-        iconMap[n.type]
-        || "🔔"
-      }
-
-    </div>
-
   `;
-
-  const acceptBtn =
-    el.querySelector(
-      ".accept-btn"
-    );
-
-  const declineBtn =
-    el.querySelector(
-      ".decline-btn"
-    );
-
-  if(acceptBtn){
-
-    acceptBtn.onclick =
-      async(e)=>{
-
-        e.stopPropagation();
-
-        acceptBtn.disabled =
-          true;
-
-        declineBtn.disabled =
-          true;
-
-        await acceptConnect(
-          n.fromUid,
-          id
-        );
-
-      };
-
-  }
-
-  if(declineBtn){
-
-    declineBtn.onclick =
-      async(e)=>{
-
-        e.stopPropagation();
-
-        acceptBtn.disabled =
-          true;
-
-        declineBtn.disabled =
-          true;
-
-        await declineConnect(
-          n.fromUid,
-          id
-        );
-
-      };
-
-  }
-
-  el.onclick = async()=>{
-
-    try{
-
-      if(!n.read){
-
-        await markRead(id);
-
-      }
-
-      if(n.fromUid){
-
-        location.href =
-          `profile.html?uid=${n.fromUid}`;
-
-      }
-
-    }catch(error){
-
-      console.error(error);
-
-    }
-
-  };
-
-  notifList.appendChild(el);
-
+  postsContainer.appendChild(div);
 }
 
-/* MARK READ */
-async function markRead(id){
-
-  try{
-
-    await updateDoc(
-      doc(
-        db,
-        "notifications",
-        id
-      ),
-      {
-        read:true
-      }
-    );
-
-  }catch(error){
-
-    console.error(error);
-
-  }
-
+function initials(name="") {
+  return name.split(" ").map(w=>w[0]).join("").toUpperCase();
 }
-
-/* MARK ALL */
-markAllBtn.onclick =
-  async()=>{
-
-    try{
-
-      markAllBtn.disabled =
-        true;
-
-      const q = query(
-        collection(
-          db,
-          "notifications"
-        ),
-        where(
-          "toUid",
-          "==",
-          currentUser.uid
-        ),
-        where(
-          "read",
-          "==",
-          false
-        )
-      );
-
-      const snap =
-        await getDocs(q);
-
-      const batch =
-        writeBatch(db);
-
-      snap.forEach((d)=>{
-
-        batch.update(
-          d.ref,
-          {
-            read:true
-          }
-        );
-
-      });
-
-      await batch.commit();
-
-    }catch(error){
-
-      console.error(error);
-
-    }
-
-    markAllBtn.disabled =
-      false;
-
-  };
-
-/* ACCEPT */
-async function acceptConnect(
-  fromUid,
-  notifId
-){
-
-  try{
-
-    const myRef =
-      doc(
-        db,
-        "users",
-        currentUser.uid
-      );
-
-    const fromRef =
-      doc(
-        db,
-        "users",
-        fromUid
-      );
-
-    await updateDoc(
-      myRef,
-      {
-        pendingConnections:
-          arrayRemove(
-            fromUid
-          ),
-
-        connections:
-          arrayUnion(
-            fromUid
-          )
-      }
-    );
-
-    await updateDoc(
-      fromRef,
-      {
-        sentConnections:
-          arrayRemove(
-            currentUser.uid
-          ),
-
-        connections:
-          arrayUnion(
-            currentUser.uid
-          )
-      }
-    );
-
-    await markRead(
-      notifId
-    );
-
-    await addDoc(
-      collection(
-        db,
-        "notifications"
-      ),
-      {
-        toUid:
-          fromUid,
-
-        fromUid:
-          currentUser.uid,
-
-        fromName:
-          currentUserData
-            ?.displayName || "",
-
-        fromUsername:
-          currentUserData
-            ?.username || "",
-
-        fromPhoto:
-          currentUserData
-            ?.photoURL || "",
-
-        type:
-          "connect_accepted",
-
-        read:false,
-
-        createdAt:
-          serverTimestamp()
-      }
-    );
-
-  }catch(error){
-
-    console.error(error);
-
-    alert(
-      "Failed to accept request"
-    );
-
-  }
-
-}
-
-/* DECLINE */
-async function declineConnect(
-  fromUid,
-  notifId
-){
-
-  try{
-
-    const myRef =
-      doc(
-        db,
-        "users",
-        currentUser.uid
-      );
-
-    const fromRef =
-      doc(
-        db,
-        "users",
-        fromUid
-      );
-
-    await updateDoc(
-      myRef,
-      {
-        pendingConnections:
-          arrayRemove(
-            fromUid
-          )
-      }
-    );
-
-    await updateDoc(
-      fromRef,
-      {
-        sentConnections:
-          arrayRemove(
-            currentUser.uid
-          )
-      }
-    );
-
-    await markRead(
-      notifId
-    );
-
-  }catch(error){
-
-    console.error(error);
-
-    alert(
-      "Failed to decline request"
-    );
-
-  }
-
-}
-
-/* BADGES */
-function watchBadges(){
-
-  notifBadgeUnsub =
-    onSnapshot(
-
-      query(
-        collection(
-          db,
-          "notifications"
-        ),
-        where(
-          "toUid",
-          "==",
-          currentUser.uid
-        ),
-        where(
-          "read",
-          "==",
-          false
-        )
-      ),
-
-      (snap)=>{
-
-        notifBadge.textContent =
-          snap.size > 9
-          ? "9+"
-          : snap.size;
-
-        notifBadge.classList
-          .toggle(
-            "show",
-            snap.size > 0
-          );
-
-      }
-
-    );
-
-  msgBadgeUnsub =
-    onSnapshot(
-
-      query(
-        collection(
-          db,
-          "messages"
-        ),
-        where(
-          "toUid",
-          "==",
-          currentUser.uid
-        ),
-        where(
-          "read",
-          "==",
-          false
-        )
-      ),
-
-      (snap)=>{
-
-        msgBadge.textContent =
-          snap.size > 9
-          ? "9+"
-          : snap.size;
-
-        msgBadge.classList
-          .toggle(
-            "show",
-            snap.size > 0
-          );
-
-      }
-
-    );
-
-}
-
-/* CLEANUP */
-window.addEventListener(
-  "beforeunload",
-  ()=>{
-
-    if(notifUnsub)
-      notifUnsub();
-
-    if(notifBadgeUnsub)
-      notifBadgeUnsub();
-
-    if(msgBadgeUnsub)
-      msgBadgeUnsub();
-
-  }
-);
