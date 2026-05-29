@@ -1,181 +1,416 @@
 import { auth, db } from "./firebase.js";
+
 import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 import {
-  collection, doc, getDoc, getDocs,
-  query, where, orderBy, onSnapshot
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  setDoc,
+  updateDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  where,
+  serverTimestamp,
+  arrayRemove
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ─────────────────────────────
+   GLOBAL STATE
+───────────────────────────── */
+let currentUser = null;
+let currentUserData = null;
+let activeConvId = null;
+let unsubChat = null;
+let conversationsCache = [];
+
+/* ─────────────────────────────
+   DOM
+───────────────────────────── */
+const convList = document.getElementById("convList");
+const chatPanel = document.getElementById("chatPanel");
+const convSearch = document.getElementById("convSearch");
+
+const msgBadge = document.getElementById("msgBadge");
+
+import { auth, db } from "./firebase.js";
+
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  orderBy,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* STATE */
-let currentUser   = null;
-let conversations = [];   // raw resolved list
-let allUsers      = [];   // for new-message modal
-let unsubConvs    = null; // single listener reference
+let currentUser = null;
+let conversations = [];
+let allUsers = [];
 
 /* DOM */
-const convList   = document.getElementById("convList");
-const searchInput= document.getElementById("searchInput");
-const modal      = document.getElementById("modal");
-const newMsgBtn  = document.getElementById("newMsgBtn");
-const closeModal = document.getElementById("closeModal");
-const modalSearch= document.getElementById("modalSearch");
-const modalList  = document.getElementById("modalList");
+const convList =
+  document.getElementById("convList");
+
+const searchInput =
+  document.getElementById("searchInput");
+
+const modal =
+  document.getElementById("modal");
+
+const newMsgBtn =
+  document.getElementById("newMsgBtn");
+
+const closeModal =
+  document.getElementById("closeModal");
+
+const modalSearch =
+  document.getElementById("modalSearch");
+
+const modalList =
+  document.getElementById("modalList");
 
 /* AUTH */
-onAuthStateChanged(auth, async (user) => {
-  if (!user) { location.href = "index.html"; return; }
+onAuthStateChanged(auth, async(user)=>{
+
+  if(!user){
+
+    location.href = "index.html";
+    return;
+
+  }
+
   currentUser = user;
-  subscribeConversations();
+
+  loadConversations();
   loadUsers();
+
 });
 
 /* HELPERS */
-function formatTime(ts) {
-  if (!ts?.toDate) return "";
-  return ts.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+function formatTime(ts){
+
+  if(!ts?.toDate) return "";
+
+  return ts.toDate().toLocaleTimeString([],{
+    hour:"2-digit",
+    minute:"2-digit"
+  });
+
 }
 
-function escapeHTML(str) {
-  if (!str) return "";
+function escapeHTML(str){
+
+  if(!str) return "";
+
   return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+
 }
 
-/* SUBSCRIBE CONVERSATIONS — single listener, never re-created */
-function subscribeConversations() {
-  if (unsubConvs) unsubConvs(); // clean up any existing listener
+/* LOAD CONVERSATIONS */
+function loadConversations(filter=""){
 
   const q = query(
-    collection(db, "conversations"),
-    where("participants", "array-contains", currentUser.uid),
-    orderBy("lastMessageAt", "desc")
+    collection(db,"conversations"),
+    where(
+      "participants",
+      "array-contains",
+      currentUser.uid
+    ),
+    orderBy("lastMessageAt","desc")
   );
 
-  unsubConvs = onSnapshot(q, async (snap) => {
+  onSnapshot(q, async(snap)=>{
+
+    convList.innerHTML = "";
+
     conversations = [];
 
-    for (const d of snap.docs) {
-      const conv    = { id: d.id, ...d.data() };
-      const otherId = conv.participants.find(p => p !== currentUser.uid);
-      if (!otherId) continue;
+    for(const d of snap.docs){
 
-      const otherSnap = await getDoc(doc(db, "users", otherId));
-      const other     = otherSnap.exists()
+      const conv = {
+        id:d.id,
+        ...d.data()
+      };
+
+      const otherId =
+        conv.participants.find(
+          p => p !== currentUser.uid
+        );
+
+      if(!otherId) continue;
+
+      const otherSnap =
+        await getDoc(doc(db,"users",otherId));
+
+      const other =
+        otherSnap.exists()
         ? otherSnap.data()
-        : { displayName: "User", initials: "?" };
+        : {
+          displayName:"User",
+          initials:"?"
+        };
 
-      conversations.push({ conv, other, otherId });
+      if(
+        filter &&
+        !other.displayName
+        ?.toLowerCase()
+        .includes(filter.toLowerCase())
+      ){
+        continue;
+      }
+
+      conversations.push({
+        conv,
+        other,
+        otherId
+      });
+
     }
 
-    renderConversations(searchInput.value.trim());
+    renderConversations();
+
   });
+
 }
 
-/* RENDER CONVERSATIONS — filter locally, no new Firestore calls */
-function renderConversations(filter = "") {
-  convList.innerHTML = "";
+/* RENDER CONVERSATIONS */
+function renderConversations(){
 
-  const filtered = filter
-    ? conversations.filter(({ other }) =>
-        other.displayName?.toLowerCase().includes(filter.toLowerCase())
-      )
-    : conversations;
+  if(conversations.length===0){
 
-  if (!filtered.length) {
     convList.innerHTML = `
+
       <div class="empty">
+
         <div>💬</div>
-        <p>${filter ? "No conversations match" : "No conversations yet"}</p>
-      </div>`;
+
+        <p>No conversations found</p>
+
+      </div>
+
+    `;
+
     return;
+
   }
 
-  filtered.forEach(({ conv, other, otherId }) => {
-    const unread = conv.unreadBy?.includes(currentUser.uid);
-    const a      = document.createElement("a");
-    a.className  = "conv-item";
-    a.href       = `chat.html?uid=${otherId}`;
-    a.innerHTML  = `
+  conversations.forEach(item=>{
+
+    const {
+      conv,
+      other,
+      otherId
+    } = item;
+
+    const unread =
+      conv.unreadBy?.includes(
+        currentUser.uid
+      );
+
+    const a =
+      document.createElement("a");
+
+    a.className = "conv-item";
+
+    a.href =
+      `chat.html?uid=${otherId}`;
+
+    a.innerHTML = `
+
       <div class="conv-avatar">
-        ${other.photoURL ? `<img src="${other.photoURL}">` : (other.initials || "?")}
+
+        ${
+          other.photoURL
+          ? `<img src="${other.photoURL}">`
+          : (other.initials || "?")
+        }
+
       </div>
+
       <div class="conv-content">
-        <div class="conv-name">${other.displayName || "User"}</div>
-        <div class="conv-preview">${escapeHTML(conv.lastMessage || "")}</div>
+
+        <div class="conv-name">
+          ${other.displayName || "User"}
+        </div>
+
+        <div class="conv-preview">
+          ${escapeHTML(conv.lastMessage || "")}
+        </div>
+
       </div>
+
       <div class="conv-right">
-        <div class="conv-time">${formatTime(conv.lastMessageAt)}</div>
-        ${unread ? `<div class="unread-dot"></div>` : ""}
-      </div>`;
+
+        <div class="conv-time">
+          ${formatTime(conv.lastMessageAt)}
+        </div>
+
+        ${
+          unread
+          ? `<div class="unread-dot"></div>`
+          : ""
+        }
+
+      </div>
+
+    `;
+
     convList.appendChild(a);
+
   });
+
 }
 
-/* SEARCH — purely local, no Firestore */
-searchInput.addEventListener("input", (e) => {
-  renderConversations(e.target.value.trim());
+/* SEARCH CONVERSATIONS */
+searchInput.addEventListener("input",(e)=>{
+
+  loadConversations(e.target.value);
+
 });
 
-/* LOAD USERS FOR MODAL */
-async function loadUsers(filter = "") {
-  const snap = await getDocs(collection(db, "users"));
-  allUsers   = [];
-  snap.forEach(d => {
-    if (d.id === currentUser.uid) return;
-    allUsers.push({ id: d.id, ...d.data() });
-  });
-  renderUsers(filter);
-}
+/* LOAD USERS */
+async function loadUsers(filter=""){
 
-/* RENDER USERS — filter locally */
-function renderUsers(filter = "") {
+  const snap =
+    await getDocs(collection(db,"users"));
+
   modalList.innerHTML = "";
 
-  const filtered = filter
-    ? allUsers.filter(u =>
-        u.displayName?.toLowerCase().includes(filter.toLowerCase()) ||
-        u.username?.toLowerCase().includes(filter.toLowerCase())
-      )
-    : allUsers;
+  allUsers = [];
 
-  if (!filtered.length) {
-    modalList.innerHTML = `
-      <div style="padding:20px;text-align:center;color:#64748b">
-        No users found
-      </div>`;
-    return;
-  }
+  snap.forEach(d=>{
 
-  filtered.forEach(u => {
-    const div      = document.createElement("div");
-    div.className  = "modal-user";
-    div.onclick    = () => { location.href = `chat.html?uid=${u.id}`; };
-    div.innerHTML  = `
-      <div class="modal-avatar">
-        ${u.photoURL ? `<img src="${u.photoURL}">` : (u.initials || "?")}
-      </div>
-      <div>
-        <div class="modal-name">${u.displayName || "User"}</div>
-        <div class="modal-username">@${u.username || "user"}</div>
-      </div>`;
-    modalList.appendChild(div);
+    if(d.id===currentUser.uid) return;
+
+    const u = d.data();
+
+    if(
+      filter &&
+      !u.displayName
+      ?.toLowerCase()
+      .includes(filter.toLowerCase())
+    ){
+      return;
+    }
+
+    allUsers.push({
+      id:d.id,
+      ...u
+    });
+
   });
+
+  renderUsers();
+
 }
 
-/* MODAL SEARCH — local filter only */
-modalSearch.addEventListener("input", (e) => {
-  renderUsers(e.target.value.trim());
+/* RENDER USERS */
+function renderUsers(){
+
+  if(allUsers.length===0){
+
+    modalList.innerHTML = `
+      <div style="
+      padding:20px;
+      text-align:center;
+      color:#64748b">
+        No users found
+      </div>
+    `;
+
+    return;
+
+  }
+
+  allUsers.forEach(u=>{
+
+    const div =
+      document.createElement("div");
+
+    div.className =
+      "modal-user";
+
+    div.onclick = ()=>{
+
+      location.href =
+        `chat.html?uid=${u.id}`;
+
+    };
+
+    div.innerHTML = `
+
+      <div class="modal-avatar">
+
+        ${
+          u.photoURL
+          ? `<img src="${u.photoURL}">`
+          : (u.initials || "?")
+        }
+
+      </div>
+
+      <div>
+
+        <div class="modal-name">
+          ${u.displayName || "User"}
+        </div>
+
+        <div class="modal-username">
+          @${u.username || "user"}
+        </div>
+
+      </div>
+
+    `;
+
+    modalList.appendChild(div);
+
+  });
+
+}
+
+/* SEARCH USERS */
+modalSearch.addEventListener("input",(e)=>{
+
+  loadUsers(e.target.value);
+
 });
 
-/* MODAL OPEN / CLOSE */
-newMsgBtn.onclick  = () => modal.classList.add("open");
-closeModal.onclick = () => modal.classList.remove("open");
-window.onclick     = (e) => { if (e.target === modal) modal.classList.remove("open"); };
+/* MODAL */
+newMsgBtn.onclick = ()=>{
 
-/* CLEANUP on page leave */
-window.addEventListener("beforeunload", () => {
-  if (unsubConvs) unsubConvs();
-});
+  modal.classList.add("open");
+
+};
+
+closeModal.onclick = ()=>{
+
+  modal.classList.remove("open");
+
+};
+
+window.onclick = (e)=>{
+
+  if(e.target===modal){
+
+    modal.classList.remove("open");
+
+  }
+
+};
