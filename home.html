@@ -341,6 +341,54 @@ html{
   .sidebar{ width:80px; }
   .nav-item span:not(.nav-icon){ display:none; }
 }
+  /* ✅ FIX 3-COLUMN LAYOUT BREAK ISSUE */
+.layout{
+  display:flex;
+  min-height:100vh;
+  max-width:1200px;
+  margin:auto;
+  overflow:hidden;
+}
+
+/* LEFT SIDEBAR */
+.sidebar{
+  flex:0 0 260px;
+}
+
+/* MIDDLE FEED (IMPORTANT FIX) */
+.feed-col{
+  flex:1;
+  min-width:0; /* 🔥 CRITICAL FIX */
+  border-right:1px solid #1e293b;
+  overflow-y:auto;
+}
+
+/* RIGHT BAR */
+.rightbar{
+  flex:0 0 320px;
+  min-width:320px;
+  overflow-y:auto;
+}
+
+/* POSTS FIX (PREVENT OVERFLOW) */
+.post{
+  max-width:100%;
+  word-break:break-word;
+}
+
+/* IMAGES ALSO SAFE */
+.post img,
+.post video{
+  max-width:100%;
+  border-radius:12px;
+}
+
+/* FEED HEADER STICK FIX */
+.feed-header{
+  position:sticky;
+  top:0;
+  z-index:50;
+}
 </style>
 </head>
 
