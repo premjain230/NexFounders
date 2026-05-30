@@ -21,7 +21,7 @@ const bannerEditBtn  = document.getElementById("bannerEditBtn");
 const displayName    = document.getElementById("displayName");
 const displayUsername= document.getElementById("displayUsername");
 const displayBio     = document.getElementById("displayBio");
-const displayEmail   = document.getElementById("displayEmail");
+
 const followersCount = document.getElementById("followersCount");
 const followingCount = document.getElementById("followingCount");
 const connectionsCount = document.getElementById("connectionsCount");
@@ -86,7 +86,7 @@ function renderProfile() {
   displayName.textContent    = profileData.displayName || "Unknown";
   displayUsername.textContent= "@" + (profileData.username||"user");
   displayBio.textContent     = profileData.bio || "";
-  displayEmail.textContent   = profileData.email || "";
+  
   followersCount.textContent = profileData.followers.length;
   followingCount.textContent = profileData.following.length;
   connectionsCount.textContent = profileData.connections.length;
