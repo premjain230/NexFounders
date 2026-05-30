@@ -15,18 +15,7 @@
 body{
   background:#0b1220;
   color:white;
-  overflow-x:hidden;
 }
-
-html{
-  scroll-behavior:smooth;
-}
-
-/* scrollbar */
-::-webkit-scrollbar{ width:10px; }
-::-webkit-scrollbar-track{ background:#0b1220; }
-::-webkit-scrollbar-thumb{ background:#1e293b; border-radius:10px; }
-::-webkit-scrollbar-thumb:hover{ background:#334155; }
 
 /* layout */
 .layout{
@@ -47,8 +36,6 @@ html{
   display:flex;
   flex-direction:column;
   gap:6px;
-  background:rgba(2,6,23,0.7);
-  backdrop-filter:blur(10px);
 }
 
 .logo{
@@ -56,7 +43,6 @@ html{
   font-weight:800;
   color:#22d3ee;
   padding:10px 14px;
-  margin-bottom:10px;
 }
 
 .nav-item{
@@ -67,27 +53,16 @@ html{
   border-radius:14px;
   text-decoration:none;
   color:white;
-  font-size:16px;
 }
 
 .nav-item:hover{
   background:#1e293b;
 }
 
-.nav-icon{ width:24px; text-align:center; color:#e2e8f0; }
-
-.post-btn{
-  margin-top:auto;
-  padding:14px;
-  border:none;
-  border-radius:30px;
-  background:#2563eb;
-  color:white;
-  font-weight:700;
-  cursor:pointer;
+.nav-icon{
+  width:24px;
+  text-align:center;
 }
-
-.post-btn:hover{ background:#3b82f6; }
 
 /* FEED */
 .feed-col{
@@ -116,7 +91,9 @@ html{
   color:#0b1220;
 }
 
-.create-right{ flex:1; }
+.create-right{
+  flex:1;
+}
 
 textarea{
   width:100%;
@@ -146,151 +123,14 @@ textarea{
   cursor:pointer;
 }
 
-/* 🔥 POSTS (UPGRADED PREMIUM UI) */
+/* POSTS (minimal) */
 .post{
-  padding:16px 18px;
+  padding:18px 20px;
   border-bottom:1px solid #1e293b;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  transition:0.2s;
-  position:relative;
 }
 
 .post:hover{
-  background:rgba(15,23,42,0.6);
-}
-
-.post:hover::before{
-  content:"";
-  position:absolute;
-  left:0;
-  top:0;
-  width:3px;
-  height:100%;
-  background:#22d3ee;
-}
-
-/* header */
-.post-header{
-  display:flex;
-  gap:12px;
-  align-items:flex-start;
-}
-
-/* avatar */
-.post-avatar{
-  width:44px;
-  height:44px;
-  border-radius:50%;
-  overflow:hidden;
-  background:linear-gradient(135deg,#2563eb,#22d3ee);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-weight:700;
-  flex-shrink:0;
-}
-
-/* name */
-.post-name{
-  font-weight:700;
-}
-
-.profile-link{
-  color:white;
-  text-decoration:none;
-}
-
-.profile-link:hover{ color:#22d3ee; }
-
-.post-username{
-  color:#64748b;
-  font-size:12px;
-  margin-top:2px;
-}
-
-/* text */
-.post-text{
-  margin-left:56px;
-  color:#e2e8f0;
-  font-size:15px;
-  line-height:1.6;
-  white-space:pre-wrap;
-  word-break:break-word;
-}
-
-/* media */
-.post-image,
-.post-video{
-  margin-left:56px;
-  width:calc(100% - 56px);
-  border-radius:14px;
-  margin-top:10px;
-  border:1px solid #1e293b;
-}
-
-/* actions */
-.post-actions{
-  margin-left:56px;
-  display:flex;
-  gap:10px;
-}
-
-.like-btn{
-  background:rgba(30,41,59,0.5);
-  border:1px solid #1e293b;
-  color:#cbd5e1;
-  padding:7px 14px;
-  border-radius:999px;
-  cursor:pointer;
-}
-
-.like-btn:hover{
-  background:#1e293b;
-}
-
-.like-btn.liked{
-  color:#f43f5e;
-  border-color:#f43f5e;
-}
-
-/* comments */
-.comments-section{
-  margin-left:56px;
-  margin-top:10px;
-}
-
-.comment{
-  background:rgba(17,24,39,0.7);
-  border:1px solid #1e293b;
-  padding:9px 12px;
-  border-radius:12px;
-  font-size:13px;
-  margin-bottom:6px;
-}
-
-.comment-input-wrap{
-  display:flex;
-  gap:8px;
-}
-
-.comment-input{
-  flex:1;
   background:#0f172a;
-  border:1px solid #1e293b;
-  border-radius:999px;
-  padding:9px 12px;
-  color:white;
-}
-
-.comment-btn{
-  background:#2563eb;
-  border:none;
-  color:white;
-  padding:9px 14px;
-  border-radius:999px;
-  cursor:pointer;
 }
 
 .rightbar{
@@ -299,7 +139,6 @@ textarea{
   position:sticky;
   top:0;
   height:100vh;
-  background:rgba(2,6,23,0.5);
 }
 </style>
 </head>
@@ -308,20 +147,16 @@ textarea{
 
 <div class="layout">
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="logo">NexFounder</div>
 
-  <a class="nav-item" href="#"><span class="nav-icon">⬢</span>Home</a>
-  <a class="nav-item" href="#"><span class="nav-icon">⌕</span>Explore</a>
-  <a class="nav-item" href="#"><span class="nav-icon">⎔</span>Notifications</a>
-  <a class="nav-item" href="#"><span class="nav-icon">✉</span>Messages</a>
-  <a class="nav-item" href="#"><span class="nav-icon">◉</span>Profile</a>
-
-  <button class="post-btn">+ Post</button>
+  <a class="nav-item" href="#"><span class="nav-icon">🏠</span>Home</a>
+  <a class="nav-item" href="#"><span class="nav-icon">🔍</span>Explore</a>
+  <a class="nav-item" href="#"><span class="nav-icon">🔔</span>Notifications</a>
+  <a class="nav-item" href="#"><span class="nav-icon">💬</span>Messages</a>
+  <a class="nav-item" href="#"><span class="nav-icon">👤</span>Profile</a>
 </aside>
 
-<!-- FEED -->
 <main class="feed-col">
 
   <div class="create-post">
@@ -339,7 +174,6 @@ textarea{
 
 </main>
 
-<!-- RIGHT -->
 <aside class="rightbar"></aside>
 
 </div>
