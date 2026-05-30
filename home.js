@@ -1,6 +1,6 @@
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"; 
-import { 
+import {
   collection, addDoc, doc, getDoc, getDocs,
   query, orderBy, serverTimestamp, updateDoc,
   arrayUnion, arrayRemove, onSnapshot, where, limit
@@ -10,7 +10,7 @@ let currentUser = null;
 let currentUserData = null;
 let currentTab = "forYou";
 
-// ── DOM ELEMENTS (SAFE INIT) ─────────────────────────
+// ── SAFE DOM INIT ─────────────────────────────
 const postInput     = document.getElementById("postInput");
 const postBtn       = document.getElementById("postBtn");
 const mediaInput    = document.getElementById("mediaInput");
@@ -26,22 +26,22 @@ const searchResults = document.getElementById("searchResults");
 const notifBadge    = document.getElementById("notifBadge");
 const msgBadge      = document.getElementById("msgBadge");
 
-// ── TAB SWITCH ──────────────────────────────────────
+// ── TAB SWITCH ────────────────────────────────
 window.switchTab = function(tab) {
   currentTab = tab;
 
-  const tabForYou = document.getElementById("tabForYou");
-  const tabFollowing = document.getElementById("tabFollowing");
+  const t1 = document.getElementById("tabForYou");
+  const t2 = document.getElementById("tabFollowing");
 
-  if (tabForYou && tabFollowing) {
-    tabForYou.classList.toggle("active", tab === "forYou");
-    tabFollowing.classList.toggle("active", tab === "following");
+  if (t1 && t2) {
+    t1.classList.toggle("active", tab === "forYou");
+    t2.classList.toggle("active", tab === "following");
   }
 
   loadFeedRealtime();
 };
 
-// ── AUTH ────────────────────────────────────────────
+// ── AUTH ───────────────────────────────────────
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     location.href = "index.html";
@@ -65,9 +65,9 @@ onAuthStateChanged(auth, async (user) => {
   watchMsgBadge();
 });
 
-// ── AVATAR HELPER (FIXED CRASH) ─────────────────────
+// ── AVATAR SAFE ───────────────────────────────
 function setAvatar(el, data) {
-  if (!el) return; // 🔥 CRITICAL FIX
+  if (!el) return;
 
   if (!data) {
     el.textContent = "?";
@@ -81,7 +81,7 @@ function setAvatar(el, data) {
   }
 }
 
-// ── CLOUDINARY UPLOAD ───────────────────────────────
+// ── CLOUDINARY ────────────────────────────────
 async function uploadToCloudinary(file) {
   const formData = new FormData();
   formData.append("file", file);
@@ -96,7 +96,7 @@ async function uploadToCloudinary(file) {
   return data.secure_url;
 }
 
-// ── CREATE POST ─────────────────────────────────────
+// ── POST CREATE ───────────────────────────────
 postBtn?.addEventListener("click", async () => {
   const text = postInput?.value.trim();
   if (!text && !mediaInput?.files[0]) return;
@@ -112,7 +112,6 @@ postBtn?.addEventListener("click", async () => {
 
     if (file) {
       const url = await uploadToCloudinary(file);
-
       if (file.type.startsWith("image")) imageUrl = url;
       if (file.type.startsWith("video")) videoUrl = url;
     }
@@ -142,7 +141,7 @@ postBtn?.addEventListener("click", async () => {
   postBtn.textContent = "Post";
 });
 
-// ── FEED ────────────────────────────────────────────
+// ── FEED ───────────────────────────────────────
 let unsubFeed = null;
 
 function loadFeedRealtime() {
@@ -178,7 +177,7 @@ function loadFeedRealtime() {
     if (snapshot.empty) {
       feedEl.innerHTML =
         `<div style="padding:40px;text-align:center;color:#64748b;">
-          No posts yet. Be the first!
+          No posts yet.
         </div>`;
       return;
     }
@@ -187,7 +186,7 @@ function loadFeedRealtime() {
   });
 }
 
-// ── RENDER POST ─────────────────────────────────────
+// ── RENDER POST ────────────────────────────────
 function renderPost(docSnap) {
   if (!feedEl) return;
 
@@ -263,7 +262,7 @@ function renderPost(docSnap) {
   feedEl.appendChild(el);
 }
 
-// ── LIKE ────────────────────────────────────────────
+// ── LIKE ───────────────────────────────────────
 async function toggleLike(postId, post) {
   const ref = doc(db, "posts", postId);
 
@@ -274,24 +273,9 @@ async function toggleLike(postId, post) {
       ? arrayRemove(currentUser.uid)
       : arrayUnion(currentUser.uid)
   });
-
-  if (!liked && post.uid !== currentUser.uid) {
-    await addDoc(collection(db, "notifications"), {
-      toUid: post.uid,
-      fromUid: currentUser.uid,
-      fromName: currentUserData.displayName,
-      fromUsername: currentUserData.username,
-      fromPhoto: currentUserData.photoURL || "",
-      type: "like",
-      postId,
-      postText: post.text?.slice(0, 60) || "",
-      read: false,
-      createdAt: serverTimestamp()
-    });
-  }
 }
 
-// ── COMMENT ─────────────────────────────────────────
+// ── COMMENT ────────────────────────────────────
 async function addComment(postId, text, post) {
   const ref = doc(db, "posts", postId);
 
@@ -302,25 +286,9 @@ async function addComment(postId, text, post) {
       text
     })
   });
-
-  if (post.uid !== currentUser.uid) {
-    await addDoc(collection(db, "notifications"), {
-      toUid: post.uid,
-      fromUid: currentUser.uid,
-      fromName: currentUserData.displayName,
-      fromUsername: currentUserData.username,
-      fromPhoto: currentUserData.photoURL || "",
-      type: "comment",
-      postId,
-      postText: post.text?.slice(0, 60) || "",
-      commentText: text,
-      read: false,
-      createdAt: serverTimestamp()
-    });
-  }
 }
 
-// ── NOTIFICATIONS ───────────────────────────────────
+// ── NOTIFICATIONS ──────────────────────────────
 function watchNotifBadge() {
   if (!notifBadge) return;
 
@@ -337,7 +305,7 @@ function watchNotifBadge() {
   });
 }
 
-// ── MESSAGES ────────────────────────────────────────
+// ── MESSAGES ───────────────────────────────────
 function watchMsgBadge() {
   if (!msgBadge) return;
 
@@ -354,7 +322,7 @@ function watchMsgBadge() {
   });
 }
 
-// ── SEARCH ───────────────────────────────────────────
+// ── SEARCH (FIXED CRASH) ───────────────────────
 searchInput?.addEventListener("input", async () => {
   const qText = searchInput.value.trim().toLowerCase();
 
@@ -368,8 +336,8 @@ searchInput?.addEventListener("input", async () => {
   }
 
   const snap = await getDocs(collection(db, "users"));
-  const matches = [];
 
+  const matches = [];
   snap.forEach((d) => {
     const u = d.data();
     if (
@@ -411,14 +379,14 @@ searchInput?.addEventListener("input", async () => {
   });
 });
 
-// hide search dropdown
+// ── OUTSIDE CLICK FIXED ────────────────────────
 document.addEventListener("click", (e) => {
-  if (
-    searchInput &&
-    searchResults &&
-    !searchInput.contains(e.target) &&
-    !searchResults.contains(e.target)
-  ) {
+  if (!searchInput || !searchResults) return;
+
+  const insideInput = searchInput.contains(e.target);
+  const insideBox = searchResults.contains(e.target);
+
+  if (!insideInput && !insideBox) {
     searchResults.style.display = "none";
   }
 });
