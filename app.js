@@ -1,3 +1,4 @@
+import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { auth, db } from "./firebase.js";
 import {
   GoogleAuthProvider,
@@ -46,6 +47,24 @@ window.emailLogin = async function () {
   try {
     await signInWithEmailAndPassword(auth, email, password);
     window.location.href = "home.html";
+  } catch (error) {
+    alert(error.message);
+  }
+};
+window.forgotPassword = async function () {
+  const email = document.getElementById("emailInput").value.trim();
+
+  if (!email) {
+    alert("Please enter your email first.");
+    return;
+  }
+
+  try {
+    await sendPasswordResetEmail(auth, email);
+
+    alert(
+      "Password reset email sent. Check your inbox and spam folder."
+    );
   } catch (error) {
     alert(error.message);
   }
