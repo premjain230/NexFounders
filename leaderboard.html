@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard - NexFounder</title>
+  <link rel="stylesheet" href="gamistan-ui.css">
+  <style>
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid var(--border-dark);
+      background: var(--bg-card);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      color: var(--text-light);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 10px;
+    }
+
+    .nav-links a {
+      padding: 8px 16px;
+      border-radius: 20px;
+      text-decoration: none;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+      background: var(--border-dark);
+      color: var(--text-light);
+    }
+
+    .nav-links a.active {
+      background: var(--accent-purple);
+      color: white;
+    }
+
+    .leaderboard-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border-dark);
+    }
+
+    .tab {
+      padding: 12px 20px;
+      border: none;
+      background: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-weight: 600;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: var(--text-light);
+    }
+
+    .tab.active {
+      color: var(--accent-purple);
+      border-bottom-color: var(--accent-purple);
+    }
+
+    .leaderboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.2s;
+    }
+
+    .leaderboard-item:hover {
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 12px rgba(124, 58, 237, 0.15);
+    }
+
+    .rank {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--accent-purple);
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .rank.top-3 {
+      font-size: 28px;
+    }
+
+    .rank.first { color: #FBBF24; }
+    .rank.second { color: #E5E7EB; }
+    .rank.third { color: #F97316; }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-purple), #7C3AED);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 700;
+      font-size: 16px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(124, 58, 237, 0.2);
+    }
+
+    .user-info {
+      flex: 1;
+    }
+
+    .user-name {
+      font-weight: 700;
+      color: var(--text-light);
+      font-size: 15px;
+      margin-bottom: 4px;
+    }
+
+    .user-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .user-stats {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .stat-item {
+      text-align: right;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent-purple);
+      margin-top: 3px;
+    }
+
+    .stat-value.xp {
+      color: #22C55E;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🏆 Leaderboard</h1>
+    <div class="nav-links">
+      <a href="feed.html">Feed</a>
+      <a href="leaderboard.html" class="active">Leaderboard</a>
+      <a href="profile-xp.html">Profile</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="leaderboard-tabs">
+      <button class="tab active" onclick="switchTab('xp')">🎯 XP Leaders</button>
+      <button class="tab" onclick="switchTab('streak')">🔥 Streak Kings</button>
+      <button class="tab" onclick="switchTab('level')">📈 Level Masters</button>
+    </div>
+
+    <div class="leaderboard-list" id="leaderboard">
+      <div class="loading">Loading leaderboard...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from "./firebase.js";
+    import { calcLevel } from "./gamistan.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { collection, query, orderBy, onSnapshot, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    let currentTab = "xp";
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "auth.html";
+        return;
+      }
+      loadLeaderboard();
+    });
+
+    window.switchTab = function(tab) {
+      currentTab = tab;
+      document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+      event.target.classList.add("active");
+      loadLeaderboard();
+    };
+
+    function loadLeaderboard() {
+      const usersRef = collection(db, "users");
+      let q;
+
+      // Query based on selected tab
+      if (currentTab === "xp") {
+        q = query(usersRef, orderBy("xp", "desc"), limit(100));
+      } else if (currentTab === "streak") {
+        q = query(usersRef, orderBy("streak", "desc"), limit(100));
+      } else {
+        // Level is calculated from XP, so sort by XP DESC
+        q = query(usersRef, orderBy("xp", "desc"), limit(100));
+      }
+
+      onSnapshot(q, (snapshot) => {
+        const leaderboard = document.getElementById("leaderboard");
+        
+        if (snapshot.empty) {
+          leaderboard.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">📭</div>
+              <div class="empty-state-text">No data yet. Be the first to ship!</div>
+            </div>
+          `;
+          return;
+        }
+
+        // Get data directly from query (already sorted)
+        const leaderboardData = [];
+        snapshot.forEach((doc) => {
+          leaderboardData.push({
+            ...doc.data(),
+            id: doc.id
+          });
+        });
+
+        // For level tab, we need to re-sort since it's calculated
+        if (currentTab === "level") {
+          leaderboardData.sort((a, b) => {
+            const levelA = calcLevel(a.xp || 0);
+            const levelB = calcLevel(b.xp || 0);
+            return levelB - levelA;
+          });
+        }
+
+        leaderboard.innerHTML = "";
+        leaderboardData.slice(0, 50).forEach((user, index) => {
+          const rank = index + 1;
+          const xp = user.xp || 0;
+          const level = calcLevel(xp);
+          const streak = user.streak || 0;
+          const initials = (user.displayName || "B").slice(0, 2).toUpperCase();
+
+          let rankClass = "";
+          let medal = "";
+          if (rank === 1) {
+            rankClass = "first";
+            medal = "🥇";
+          } else if (rank === 2) {
+            rankClass = "second";
+            medal = "🥈";
+          } else if (rank === 3) {
+            rankClass = "third";
+            medal = "🥉";
+          }
+
+          let displayValue = xp;
+          if (currentTab === "streak") {
+            displayValue = streak;
+          } else if (currentTab === "level") {
+            displayValue = level;
+          }
+
+          leaderboard.innerHTML += `
+            <div class="leaderboard-item">
+              <div class="rank ${rankClass} top-3">${medal} #${rank}</div>
+              <div class="avatar">${initials}</div>
+              <div class="user-info">
+                <div class="user-name">${user.displayName || "Anonymous Builder"}</div>
+                <div class="user-meta">Level ${level} • ${streak}🔥</div>
+              </div>
+              <div class="user-stats">
+                <div class="stat-item">
+                  <div class="stat-label">${currentTab === "streak" ? "Streak" : currentTab === "level" ? "Level" : "XP"}</div>
+                  <div class="stat-value ${currentTab === "xp" ? "xp" : ""}">${displayValue}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      });
+    }
+  </script>
+</body>
+</html>

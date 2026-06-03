@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Builder Feed - NexFounder</title>
+  <link rel="stylesheet" href="gamistan-ui.css">
+  <style>
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .ship-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 0 10px rgba(124, 58, 237, 0.15);
+    }
+
+    .ship-section h2 {
+      margin: 0 0 15px 0;
+      color: var(--text-light);
+      font-size: 18px;
+    }
+
+    #shipInput {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-dark);
+      border: 1px solid var(--border-dark);
+      border-radius: 10px;
+      color: var(--text-light);
+      font-size: 15px;
+      resize: none;
+      min-height: 80px;
+      margin-bottom: 12px;
+      font-family: inherit;
+    }
+
+    #shipInput:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+
+    #shipInput::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .feed-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .feed-title {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 25px;
+      color: var(--text-light);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .empty-state-text {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid var(--border-dark);
+      background: var(--bg-card);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      color: var(--text-light);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 10px;
+    }
+
+    .nav-links a {
+      padding: 8px 16px;
+      border-radius: 20px;
+      text-decoration: none;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+      background: var(--border-dark);
+      color: var(--text-light);
+    }
+
+    .nav-links a.active {
+      background: var(--accent-purple);
+      color: white;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🚀 Builder Feed</h1>
+    <div class="nav-links">
+      <a href="feed.html" class="active">Feed</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="profile-xp.html">Profile</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="ship-section">
+      <h2>🚀 Ship What You Built Today</h2>
+      <textarea id="shipInput" placeholder="What did you ship today? Share your progress, ideas, or wins..."></textarea>
+      <button class="ship-btn" id="shipBtn">Ship 🚀 (+20 XP)</button>
+    </div>
+
+    <div class="feed-title">Latest Ships</div>
+    <div class="feed-list" id="feed">
+      <div class="loading">Loading feed...</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    import { shipPost, dailyLogin } from "./gamistan.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "auth.html";
+        return;
+      }
+      currentUser = user;
+      await dailyLogin(user.uid);
+      loadFeed();
+    });
+
+    document.getElementById("shipBtn").addEventListener("click", async () => {
+      const text = document.getElementById("shipInput").value.trim();
+      
+      if (!text) {
+        alert("Please write something before shipping! 🚀");
+        return;
+      }
+
+      const btn = document.getElementById("shipBtn");
+      btn.disabled = true;
+      btn.innerText = "Shipping...";
+
+      try {
+        const userName = currentUser.displayName || "Anonymous Builder";
+        const userInitials = userName.slice(0, 2).toUpperCase();
+        
+        await shipPost(currentUser.uid, text, userName, userInitials);
+        document.getElementById("shipInput").value = "";
+        btn.disabled = false;
+        btn.innerText = "Ship 🚀 (+20 XP)";
+      } catch (error) {
+        console.error("Error shipping:", error);
+        alert("Failed to ship. Try again!");
+        btn.disabled = false;
+        btn.innerText = "Ship 🚀 (+20 XP)";
+      }
+    });
+
+    function loadFeed() {
+      const feedRef = collection(db, "feed");
+      const q = query(feedRef, orderBy("timestamp", "desc"));
+
+      onSnapshot(q, (snapshot) => {
+        const feed = document.getElementById("feed");
+        
+        if (snapshot.empty) {
+          feed.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state-icon">📭</div>
+              <div class="empty-state-text">No ships yet. Be the first to ship!</div>
+            </div>
+          `;
+          return;
+        }
+
+        feed.innerHTML = "";
+        snapshot.forEach((doc) => {
+          const post = doc.data();
+          const date = post.timestamp ? new Date(post.timestamp.toDate()).toLocaleDateString() : "Today";
+          
+          feed.innerHTML += `
+            <div class="post">
+              <div class="post-header">
+                <div class="post-avatar">${post.userInitials}</div>
+                <div class="post-meta">
+                  <div class="post-author">${post.userName}</div>
+                  <div class="post-time">${date}</div>
+                </div>
+              </div>
+              <div class="post-text">${post.text}</div>
+              <span class="post-xp">+${post.xp} XP</span>
+            </div>
+          `;
+        });
+      });
+    }
+  </script>
+</body>
+</html>

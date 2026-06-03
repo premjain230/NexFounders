@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - NexFounder</title>
+  <link rel="stylesheet" href="gamistan-ui.css">
+  <style>
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid var(--border-dark);
+      background: var(--bg-card);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 24px;
+      color: var(--text-light);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 10px;
+    }
+
+    .nav-links a {
+      padding: 8px 16px;
+      border-radius: 20px;
+      text-decoration: none;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover {
+      background: var(--border-dark);
+      color: var(--text-light);
+    }
+
+    .nav-links a.active {
+      background: var(--accent-purple);
+      color: white;
+    }
+
+    .profile-header {
+      background: linear-gradient(135deg, var(--accent-purple), #7C3AED);
+      padding: 40px 20px;
+      border-radius: 20px;
+      text-align: center;
+      margin-bottom: 30px;
+      color: white;
+      box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3);
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 800;
+      margin: 0 auto 15px;
+      border: 3px solid white;
+    }
+
+    .profile-name {
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 5px;
+    }
+
+    .profile-email {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    .stat-box {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      opacity: 0.9;
+      font-weight: 600;
+    }
+
+    .xp-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px rgba(124, 58, 237, 0.15);
+    }
+
+    .xp-section h3 {
+      margin: 0 0 15px 0;
+      color: var(--text-light);
+      font-size: 16px;
+    }
+
+    .xp-progress {
+      margin-bottom: 15px;
+    }
+
+    .xp-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .xp-bar {
+      height: 12px;
+      background: var(--border-dark);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border-dark);
+    }
+
+    .xp-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #22C55E, #10B981);
+      width: 0%;
+      transition: width 0.4s ease;
+      border-radius: 10px;
+    }
+
+    .level-display {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .level-badge {
+      width: 120px;
+      height: 120px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, var(--accent-purple), #7C3AED);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 8px 25px rgba(124, 58, 237, 0.3);
+    }
+
+    .level-number {
+      font-size: 48px;
+      font-weight: 800;
+    }
+
+    .level-text {
+      font-size: 12px;
+      text-transform: uppercase;
+      opacity: 0.9;
+      font-weight: 600;
+      margin-top: 5px;
+    }
+
+    .level-info h3 {
+      margin: 0 0 10px 0;
+      color: var(--text-light);
+      font-size: 18px;
+    }
+
+    .level-info p {
+      margin: 0 0 8px 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .streak-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dark);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px rgba(124, 58, 237, 0.15);
+    }
+
+    .streak-display {
+      font-size: 48px;
+      margin: 15px 0;
+    }
+
+    .streak-section h3 {
+      margin: 0 0 10px 0;
+      color: var(--text-light);
+    }
+
+    .streak-section p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .logout-btn {
+      width: 100%;
+      padding: 12px;
+      background: #EF4444;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #DC2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>👤 Profile</h1>
+    <div class="nav-links">
+      <a href="feed.html">Feed</a>
+      <a href="leaderboard.html">Leaderboard</a>
+      <a href="profile-xp.html" class="active">Profile</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="profile-header">
+      <div class="profile-avatar" id="profileAvatar">?</div>
+      <div class="profile-name" id="profileName">Loading...</div>
+      <div class="profile-email" id="profileEmail"></div>
+      
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-value" id="levelStat">1</span>
+          <div class="stat-label">Level</div>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="xpStat">0</span>
+          <div class="stat-label">XP</div>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="streakStat">0</span>
+          <div class="stat-label">Streak</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="xp-section">
+      <h3>🎯 Level Progress</h3>
+      <div class="level-display">
+        <div class="level-badge">
+          <div class="level-number" id="levelNumber">1</div>
+          <div class="level-text">Level</div>
+        </div>
+        <div class="level-info">
+          <h3 id="levelTitle">Novice Builder</h3>
+          <p id="nextLevelText">0 / 200 XP to next level</p>
+          <div class="xp-progress">
+            <div class="xp-bar">
+              <div class="xp-fill" id="xpFill" style="width: 0%"></div>
+            </div>
+          </div>
+          <p id="totalXpText">Total XP: 0</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="streak-section">
+      <h3>🔥 Daily Streak</h3>
+      <div class="streak-display" id="streakDisplay">0</div>
+      <p>Keep your streak alive! Login daily to earn +20 XP</p>
+    </div>
+
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    import { calcLevel } from "./gamistan.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "auth.html";
+        return;
+      }
+
+      // Set profile info
+      document.getElementById("profileName").innerText = user.displayName || "Builder";
+      document.getElementById("profileEmail").innerText = user.email;
+      const initials = (user.displayName || "B").slice(0, 2).toUpperCase();
+      document.getElementById("profileAvatar").innerText = initials;
+
+      // Real-time stats
+      const userRef = doc(db, "users", user.uid);
+      onSnapshot(userRef, (snap) => {
+        if (!snap.exists()) return;
+        
+        const userData = snap.data();
+        const xp = userData.xp || 0;
+        const level = calcLevel(xp);
+        const streak = userData.streak || 0;
+        const xpInLevel = xp % 200;
+        const nextLevelXp = 200 - xpInLevel;
+        const xpPercent = (xpInLevel / 200) * 100;
+
+        // Update display
+        document.getElementById("levelStat").innerText = level;
+        document.getElementById("xpStat").innerText = xp;
+        document.getElementById("streakStat").innerText = streak;
+        document.getElementById("levelNumber").innerText = level;
+        document.getElementById("streakDisplay").innerText = streak;
+        document.getElementById("nextLevelText").innerText = `${xpInLevel} / 200 XP to next level`;
+        document.getElementById("totalXpText").innerText = `Total XP: ${xp}`;
+        document.getElementById("xpFill").style.width = xpPercent + "%";
+
+        // Level titles
+        const titles = [
+          "Novice Builder",
+          "Apprentice Maker",
+          "Emerging Founder",
+          "Growth Hacker",
+          "Serial Entrepreneur",
+          "Visionary Leader",
+          "Industry Pioneer"
+        ];
+        const title = titles[Math.min(level - 1, titles.length - 1)];
+        document.getElementById("levelTitle").innerText = title;
+      });
+    });
+
+    window.logout = async function() {
+      try {
+        await auth.signOut();
+        window.location.href = "auth.html";
+      } catch (error) {
+        alert("Error logging out: " + error.message);
+      }
+    };
+  </script>
+</body>
+</html>
