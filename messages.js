@@ -1,51 +1,37 @@
+/**
+ * messages.js — NexFounder Conversations List
+ *
+ * Upgrades vs original:
+ *  • XSS: escapeHTML on all user content; avatarHTML uses safe URL
+ *  • Performance: user lookups cached via getCachedUser/cacheUser —
+ *    avoids a getDoc per conversation on every snapshot fire
+ *  • Listener: single tracked onSnapshot; cleaned up on pagehide
+ *  • Low data: badges use conversations.unreadBy instead of messages collection
+ */
+
 import { auth, db } from "./firebase.js";
-
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
-  setDoc,
-  updateDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  where,
-  serverTimestamp,
-  arrayRemove
+  collection, doc, getDoc, getDocs,
+  query, orderBy, onSnapshot, where
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { esc, safeUrl, debounce, formatTime, trackUnsub, cacheUser, getCachedUser } from "./utils.js";
 
-/* ─────────────────────────────
-   GLOBAL STATE
-───────────────────────────── */
-let currentUser = null;
+let currentUser     = null;
 let currentUserData = null;
-let activeConvId = null;
-let unsubChat = null;
 let conversationsCache = [];
 
-/* ─────────────────────────────
-   DOM
-───────────────────────────── */
-const convList    = document.getElementById("convList");
-const chatPanel   = document.getElementById("chatPanel");
-const convSearch  = document.getElementById("convSearch");
-const msgBadge    = document.getElementById("msgBadge");
-const searchInput = document.getElementById("searchInput");
-const modal       = document.getElementById("modal");
-const newMsgBtn   = document.getElementById("newMsgBtn");
-const closeModal  = document.getElementById("closeModal");
-const modalSearch = document.getElementById("modalSearch");
-const modalList   = document.getElementById("modalList");
+const convList   = document.getElementById("convList");
+const convSearch = document.getElementById("convSearch");
+const searchInput= document.getElementById("searchInput");
+const msgBadge   = document.getElementById("msgBadge");
+const modal      = document.getElementById("modal");
+const newMsgBtn  = document.getElementById("newMsgBtn");
+const closeModal = document.getElementById("closeModal");
+const modalSearch= document.getElementById("modalSearch");
+const modalList  = document.getElementById("modalList");
 
-/* ─────────────────────────────
-   AUTH
-───────────────────────────── */
+// ── AUTH ──────────────────────────────────────────────────────────────────────
 onAuthStateChanged(auth, async (user) => {
   if (!user) { location.href = "index.html"; return; }
   currentUser = user;
@@ -55,34 +41,10 @@ onAuthStateChanged(auth, async (user) => {
 
   loadConversations();
   loadUsers();
+  watchMsgBadge();
 });
 
-/* ─────────────────────────────
-   HELPERS
-───────────────────────────── */
-function formatTime(ts) {
-  if (!ts?.toDate) return "";
-  return ts.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-function escapeHTML(str) {
-  if (!str) return "";
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
-function avatarHTML(user, size = 44) {
-  if (user.photoURL) {
-    return `<img src="${user.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
-  }
-  return user.initials || "?";
-}
-
-/* ─────────────────────────────
-   LOAD CONVERSATIONS
-───────────────────────────── */
+// ── LOAD CONVERSATIONS ────────────────────────────────────────────────────────
 function loadConversations(filter = "") {
   const q = query(
     collection(db, "conversations"),
@@ -90,112 +52,177 @@ function loadConversations(filter = "") {
     orderBy("lastMessageAt", "desc")
   );
 
-  onSnapshot(q, async (snap) => {
-    convList.innerHTML = "";
+  trackUnsub(onSnapshot(q, async (snap) => {
     conversationsCache = [];
 
-    for (const d of snap.docs) {
-      const conv = { id: d.id, ...d.data() };
+    // Resolve other-user data, using cache to avoid repeated getDoc calls
+    const resolvePromises = snap.docs.map(async d => {
+      const conv    = { id: d.id, ...d.data() };
       const otherId = conv.participants.find(p => p !== currentUser.uid);
-      if (!otherId) continue;
+      if (!otherId) return null;
 
-      const otherSnap = await getDoc(doc(db, "users", otherId));
-      const other = otherSnap.exists()
-        ? otherSnap.data()
-        : { displayName: "User", initials: "?" };
+      let other = getCachedUser(otherId);
+      if (!other) {
+        const otherSnap = await getDoc(doc(db, "users", otherId));
+        other = otherSnap.exists() ? otherSnap.data() : { displayName: "User", initials: "?" };
+        cacheUser(otherId, other);
+      }
+      return { conv, other, otherId };
+    });
 
-      if (filter && !other.displayName?.toLowerCase().includes(filter.toLowerCase())) continue;
-
-      conversationsCache.push({ conv, other, otherId });
-    }
-
-    renderConversations();
-  });
+    const results = (await Promise.all(resolvePromises)).filter(Boolean);
+    conversationsCache = results;
+    renderConversations(filter);
+  }));
 }
 
-/* ─────────────────────────────
-   RENDER CONVERSATIONS
-───────────────────────────── */
-function renderConversations() {
-  if (conversationsCache.length === 0) {
+// ── RENDER CONVERSATIONS ──────────────────────────────────────────────────────
+function renderConversations(filter = "") {
+  convList.innerHTML = "";
+
+  const filtered = filter
+    ? conversationsCache.filter(({ other }) =>
+        other.displayName?.toLowerCase().includes(filter.toLowerCase()))
+    : conversationsCache;
+
+  if (!filtered.length) {
     convList.innerHTML = `<div class="empty"><div>💬</div><p>No conversations yet</p></div>`;
     return;
   }
 
-  conversationsCache.forEach(({ conv, other, otherId }) => {
+  filtered.forEach(({ conv, other, otherId }) => {
     const unread = conv.unreadBy?.includes(currentUser.uid);
+
     const a = document.createElement("a");
     a.className = "conv-item" + (unread ? " unread" : "");
-    a.href = `chat.html?uid=${otherId}`;
-    a.innerHTML = `
-      <div class="conv-avatar">${avatarHTML(other)}</div>
-      <div class="conv-content">
-        <div class="conv-name">${escapeHTML(other.displayName || "User")}</div>
-        <div class="conv-preview">${escapeHTML(conv.lastMessage || "")}</div>
-      </div>
-      <div class="conv-right">
-        <div class="conv-time">${formatTime(conv.lastMessageAt)}</div>
-        ${unread ? `<div class="unread-dot"></div>` : ""}
-      </div>`;
+    a.href      = `chat.html?uid=${encodeURIComponent(otherId)}`;
+
+    // Avatar — safe DOM build
+    const avDiv = document.createElement("div");
+    avDiv.className = "conv-avatar";
+    const url = safeUrl(other.photoURL);
+    if (url) {
+      const img = document.createElement("img");
+      img.src = url; img.alt = esc(other.displayName || "");
+      img.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:50%;";
+      img.loading = "lazy";
+      avDiv.appendChild(img);
+    } else {
+      avDiv.textContent = other.initials || "?";
+    }
+
+    // Content
+    const contentDiv = document.createElement("div");
+    contentDiv.className = "conv-content";
+    const nameEl = document.createElement("div");
+    nameEl.className  = "conv-name";
+    nameEl.textContent= other.displayName || "User";
+    const previewEl = document.createElement("div");
+    previewEl.className  = "conv-preview";
+    previewEl.textContent= conv.lastMessage || "";
+    contentDiv.appendChild(nameEl);
+    contentDiv.appendChild(previewEl);
+
+    // Right (time + unread dot)
+    const rightDiv = document.createElement("div");
+    rightDiv.className = "conv-right";
+    const timeEl = document.createElement("div");
+    timeEl.className  = "conv-time";
+    timeEl.textContent= formatTime(conv.lastMessageAt);
+    rightDiv.appendChild(timeEl);
+    if (unread) {
+      const dot = document.createElement("div");
+      dot.className = "unread-dot";
+      rightDiv.appendChild(dot);
+    }
+
+    a.appendChild(avDiv);
+    a.appendChild(contentDiv);
+    a.appendChild(rightDiv);
     convList.appendChild(a);
   });
 }
 
-/* ─────────────────────────────
-   SEARCH CONVERSATIONS
-───────────────────────────── */
-if (searchInput) {
-  searchInput.addEventListener("input", (e) => loadConversations(e.target.value));
-}
-if (convSearch) {
-  convSearch.addEventListener("input", (e) => loadConversations(e.target.value));
-}
+// ── SEARCH ────────────────────────────────────────────────────────────────────
+const handleSearch = debounce((val) => renderConversations(val), 200);
+searchInput?.addEventListener("input",  e => handleSearch(e.target.value));
+convSearch?.addEventListener("input",   e => handleSearch(e.target.value));
 
-/* ─────────────────────────────
-   LOAD USERS (for modal)
-───────────────────────────── */
+// ── LOAD USERS FOR MODAL (one-time) ───────────────────────────────────────────
+let allUsersCache = null;
+
 async function loadUsers(filter = "") {
-  const snap = await getDocs(collection(db, "users"));
   if (!modalList) return;
+
+  if (!allUsersCache) {
+    const snap = await getDocs(collection(db, "users"));
+    allUsersCache = [];
+    snap.forEach(d => {
+      if (d.id !== currentUser.uid) allUsersCache.push({ id: d.id, ...d.data() });
+    });
+  }
+
+  const filtered = filter
+    ? allUsersCache.filter(u => u.displayName?.toLowerCase().includes(filter.toLowerCase()))
+    : allUsersCache;
+
   modalList.innerHTML = "";
 
-  const users = [];
-  snap.forEach(d => {
-    if (d.id === currentUser.uid) return;
-    const u = d.data();
-    if (filter && !u.displayName?.toLowerCase().includes(filter.toLowerCase())) return;
-    users.push({ id: d.id, ...u });
-  });
-
-  if (users.length === 0) {
-    modalList.innerHTML = `<div style="padding:20px;text-align:center;color:#64748b">No users found</div>`;
+  if (!filtered.length) {
+    const empty = document.createElement("div");
+    empty.style.cssText = "padding:20px;text-align:center;color:#64748b";
+    empty.textContent   = "No users found";
+    modalList.appendChild(empty);
     return;
   }
 
-  users.forEach(u => {
+  filtered.forEach(u => {
     const div = document.createElement("div");
     div.className = "modal-user";
-    div.onclick = () => { location.href = `chat.html?uid=${u.id}`; };
-    div.innerHTML = `
-      <div class="modal-avatar">${avatarHTML(u)}</div>
-      <div>
-        <div class="modal-name">${escapeHTML(u.displayName || "User")}</div>
-        <div class="modal-username">@${escapeHTML(u.username || "user")}</div>
-      </div>`;
+    div.onclick   = () => { location.href = `chat.html?uid=${encodeURIComponent(u.id)}`; };
+
+    const avDiv = document.createElement("div");
+    avDiv.className = "modal-avatar";
+    const url = safeUrl(u.photoURL);
+    if (url) {
+      const img = document.createElement("img");
+      img.src = url; img.alt = esc(u.displayName || "");
+      img.style.cssText = "width:100%;height:100%;object-fit:cover;border-radius:50%;";
+      avDiv.appendChild(img);
+    } else {
+      avDiv.textContent = u.initials || "?";
+    }
+
+    const info = document.createElement("div");
+    const nameEl  = document.createElement("div");
+    nameEl.className  = "modal-name";
+    nameEl.textContent= u.displayName || "User";
+    const unameEl = document.createElement("div");
+    unameEl.className  = "modal-username";
+    unameEl.textContent= `@${u.username || "user"}`;
+    info.appendChild(nameEl);
+    info.appendChild(unameEl);
+
+    div.appendChild(avDiv);
+    div.appendChild(info);
     modalList.appendChild(div);
   });
 }
 
-/* ─────────────────────────────
-   MODAL
-───────────────────────────── */
-if (newMsgBtn)  newMsgBtn.onclick  = () => modal?.classList.add("open");
-if (closeModal) closeModal.onclick = () => modal?.classList.remove("open");
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+newMsgBtn?.addEventListener("click",  () => modal?.classList.add("open"));
+closeModal?.addEventListener("click", () => modal?.classList.remove("open"));
+window.addEventListener("click", e => { if (e.target === modal) modal?.classList.remove("open"); });
+modalSearch?.addEventListener("input", debounce(e => loadUsers(e.target.value), 200));
 
-window.onclick = (e) => {
-  if (e.target === modal) modal?.classList.remove("open");
-};
-
-if (modalSearch) {
-  modalSearch.addEventListener("input", (e) => loadUsers(e.target.value));
+// ── MSG BADGE ─────────────────────────────────────────────────────────────────
+function watchMsgBadge() {
+  if (!msgBadge) return;
+  trackUnsub(onSnapshot(
+    query(collection(db, "conversations"), where("participants", "array-contains", currentUser.uid), where("unreadBy", "array-contains", currentUser.uid)),
+    snap => {
+      msgBadge.textContent = snap.size > 9 ? "9+" : snap.size;
+      msgBadge.classList.toggle("show", snap.size > 0);
+    }
+  ));
 }
