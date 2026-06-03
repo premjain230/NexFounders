@@ -1,5 +1,5 @@
 /**
- * feed.js — NexFounder Home Feed
+ * feed.js — NexFounder Home Feed 
  *
  * Upgrades vs original:
  *  • XSS: all user content escaped via esc(); no raw innerHTML interpolation
